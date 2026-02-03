@@ -100,9 +100,9 @@ func (r *FixedFieldReader) ReadInt32() int32 {
 	return val
 }
 
-// ReadBool reads a boolean (1 byte).
+// ReadBool reads a boolean (2 bytes per GED-188 spec).
 func (r *FixedFieldReader) ReadBool() bool {
-	return r.ReadUint8() != 0
+	return r.ReadUint16() != 0
 }
 
 // ReadFixedString reads a fixed-length string.
@@ -205,12 +205,12 @@ func (w *FixedFieldWriter) WriteInt32(v int32) {
 	w.err = w.buf.WriteInt32(v)
 }
 
-// WriteBool writes a boolean as 1 byte.
+// WriteBool writes a boolean as 2 bytes per GED-188 spec.
 func (w *FixedFieldWriter) WriteBool(v bool) {
 	if v {
-		w.WriteUint8(1)
+		w.WriteUint16(1)
 	} else {
-		w.WriteUint8(0)
+		w.WriteUint16(0)
 	}
 }
 

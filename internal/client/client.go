@@ -168,12 +168,12 @@ func (c *Client) open(ctx context.Context) error {
 		switch m := msg.(type) {
 		case *messages.OpenConf:
 			c.session.SetMonitorID(m.MonitorID)
-			c.session.SetOpenConfDetails(m.ServiceGranted, m.PeripheralID, m.AgentState)
+			c.session.SetOpenConfDetails(m.ServicesGranted, m.FltPeripheralID, m.AgentState)
 			c.session.SetState(StateOpen)
 			c.logger.Info("session opened",
 				"monitorID", m.MonitorID,
-				"serviceGranted", m.ServiceGranted,
-				"peripheralID", m.PeripheralID,
+				"servicesGranted", m.ServicesGranted,
+				"peripheralID", m.FltPeripheralID,
 				"agentState", protocol.AgentStateName(m.AgentState))
 			return nil
 

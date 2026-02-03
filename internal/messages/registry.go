@@ -93,6 +93,28 @@ func (r *Registry) Create(msgType uint32) protocol.Message {
 	case protocol.MsgTypeAgentStateEvent:
 		return &AgentStateEvent{}
 
+	// Call control messages
+	case protocol.MsgTypeConsultCallReq:
+		return &ConsultCallReq{}
+	case protocol.MsgTypeConsultCallConf:
+		return &ConsultCallConf{}
+	case protocol.MsgTypeConferenceCallReq:
+		return &ConferenceCallReq{}
+	case protocol.MsgTypeConferenceCallConf:
+		return &ConferenceCallConf{}
+	case protocol.MsgTypeTransferCallReq:
+		return &TransferCallReq{}
+	case protocol.MsgTypeTransferCallConf:
+		return &TransferCallConf{}
+	case protocol.MsgTypeHoldCallReq:
+		return &HoldCallReq{}
+	case protocol.MsgTypeHoldCallConf:
+		return &HoldCallConf{}
+	case protocol.MsgTypeRetrieveCallReq:
+		return &RetrieveCallReq{}
+	case protocol.MsgTypeRetrieveCallConf:
+		return &RetrieveCallConf{}
+
 	default:
 		// Return a generic message for unknown types
 		return &GenericMessage{msgType: msgType}

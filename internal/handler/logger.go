@@ -34,14 +34,12 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
 				"peripheralID", m.PeripheralID,
-				"callType", protocol.CallTypeName(m.CallType),
-				"connectionState", protocol.ConnectionStateName(m.ConnectionState),
+				"callType", m.CallType,
+				"connectionDeviceIDType", m.ConnectionDeviceIDType,
 				"ANI", m.ANI,
 				"DNIS", m.DNIS,
-				"callingDeviceID", m.CallingDeviceID,
-				"calledDeviceID", m.CalledDeviceID,
-				"serviceNumber", m.ServiceNumber,
-				"skillGroupNumber", m.SkillGroupNumber,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"dialedNumber", m.DialedNumber,
 			)...)
 
 	case *messages.EndCallEvent:
@@ -50,7 +48,7 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
 				"peripheralID", m.PeripheralID,
-				"connectionState", protocol.ConnectionStateName(m.ConnectionState),
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallDeliveredEvent:
@@ -61,6 +59,8 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"ANI", m.ANI,
 				"DNIS", m.DNIS,
 				"eventCause", m.EventCause,
+				"localConnectionState", m.LocalConnectionState,
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallEstablishedEvent:
@@ -68,9 +68,15 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 			append(attrs,
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"eventCause", m.EventCause,
+				"localConnectionState", m.LocalConnectionState,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"answeringDeviceID", m.AnsweringDeviceID,
+				"callingDeviceID", m.CallingDeviceID,
+				"calledDeviceID", m.CalledDeviceID,
 				"ANI", m.ANI,
 				"DNIS", m.DNIS,
-				"eventCause", m.EventCause,
 			)...)
 
 	case *messages.CallHeldEvent:
@@ -78,7 +84,13 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 			append(attrs,
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
 				"eventCause", m.EventCause,
+				"localConnectionState", m.LocalConnectionState,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"holdingDeviceID", m.HoldingDeviceID,
+				"ANI", m.ANI,
+				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallRetrievedEvent:
@@ -86,7 +98,13 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 			append(attrs,
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
 				"eventCause", m.EventCause,
+				"localConnectionState", m.LocalConnectionState,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"retrievingDeviceID", m.RetrievingDeviceID,
+				"ANI", m.ANI,
+				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallClearedEvent:
@@ -95,6 +113,7 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
 				"eventCause", m.EventCause,
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallConnectionClearedEvent:
@@ -103,6 +122,7 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
 				"eventCause", m.EventCause,
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallOriginatedEvent:
@@ -112,6 +132,7 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"monitorID", m.MonitorID,
 				"callingDeviceID", m.CallingDeviceID,
 				"calledDeviceID", m.CalledDeviceID,
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallFailedEvent:
@@ -120,24 +141,43 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
 				"eventCause", m.EventCause,
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallConferencedEvent:
 		h.logger.Info("call conferenced",
 			append(attrs,
-				"callID", m.ConnectionCallID,
-				"monitorID", m.MonitorID,
 				"primaryCallID", m.PrimaryCallID,
 				"secondaryCallID", m.SecondaryCallID,
+				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"numParties", m.NumParties,
+				"eventCause", m.EventCause,
+				"localConnectionState", m.LocalConnectionState,
+				"primaryDeviceID", m.PrimaryDeviceID,
+				"secondaryDeviceID", m.SecondaryDeviceID,
+				"controllerDeviceID", m.ControllerDeviceID,
+				"addedPartyDeviceID", m.AddedPartyDeviceID,
+				"ANI", m.ANI,
+				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallTransferredEvent:
 		h.logger.Info("call transferred",
 			append(attrs,
-				"callID", m.ConnectionCallID,
-				"monitorID", m.MonitorID,
 				"primaryCallID", m.PrimaryCallID,
 				"secondaryCallID", m.SecondaryCallID,
+				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"numParties", m.NumParties,
+				"eventCause", m.EventCause,
+				"localConnectionState", m.LocalConnectionState,
+				"primaryDeviceID", m.PrimaryDeviceID,
+				"secondaryDeviceID", m.SecondaryDeviceID,
+				"transferringDeviceID", m.TransferringDeviceID,
+				"transferredDeviceID", m.TransferredDeviceID,
+				"ANI", m.ANI,
+				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallQueuedEvent:
@@ -145,8 +185,8 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 			append(attrs,
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
-				"serviceNumber", m.ServiceNumber,
-				"skillGroupNumber", m.SkillGroupNumber,
+				"eventCause", m.EventCause,
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallDequeuedEvent:
@@ -154,7 +194,8 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 			append(attrs,
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
-				"serviceNumber", m.ServiceNumber,
+				"eventCause", m.EventCause,
+				"connectionDeviceID", m.ConnectionDeviceID,
 			)...)
 
 	case *messages.CallDataUpdateEvent:
@@ -162,6 +203,14 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 			append(attrs,
 				"callID", m.ConnectionCallID,
 				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"callType", m.CallType,
+				"newConnectionCallID", m.NewConnectionCallID,
+				"calledPartyDisposition", m.CalledPartyDisposition,
+				"campaignID", m.CampaignID,
+				"queryRuleID", m.QueryRuleID,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"newConnectionDeviceID", m.NewConnectionDeviceID,
 				"ANI", m.ANI,
 				"DNIS", m.DNIS,
 			)...)

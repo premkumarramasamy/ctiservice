@@ -4,86 +4,42 @@ import (
 	"ctiservice/internal/protocol"
 )
 
-// BaseCallEvent contains common fields for call events.
-type BaseCallEvent struct {
-	MonitorID            uint32 // Monitor ID
-	PeripheralID         uint32 // Peripheral ID
-	PeripheralType       uint16 // Type of peripheral
-	ConnectionDeviceType uint16 // Device type
-	ConnectionCallID     uint32 // Call ID
-	ConnectionState      uint16 // Current connection state
-	Reserved             uint16 // Reserved
-}
-
-func (b *BaseCallEvent) readFrom(r *protocol.FixedFieldReader) {
-	b.MonitorID = r.ReadUint32()
-	b.PeripheralID = r.ReadUint32()
-	b.PeripheralType = r.ReadUint16()
-	b.ConnectionDeviceType = r.ReadUint16()
-	b.ConnectionCallID = r.ReadUint32()
-	b.ConnectionState = r.ReadUint16()
-	b.Reserved = r.ReadUint16()
-}
-
-func (b *BaseCallEvent) writeTo(w *protocol.FixedFieldWriter) {
-	w.WriteUint32(b.MonitorID)
-	w.WriteUint32(b.PeripheralID)
-	w.WriteUint16(b.PeripheralType)
-	w.WriteUint16(b.ConnectionDeviceType)
-	w.WriteUint32(b.ConnectionCallID)
-	w.WriteUint16(b.ConnectionState)
-	w.WriteUint16(b.Reserved)
-}
-
-// CallVariables holds the 10 call variables from floating fields.
-type CallVariables struct {
-	Var1  string
-	Var2  string
-	Var3  string
-	Var4  string
-	Var5  string
-	Var6  string
-	Var7  string
-	Var8  string
-	Var9  string
-	Var10 string
-}
-
-func (cv *CallVariables) parseFrom(ff *protocol.FloatingFields) {
-	cv.Var1 = ff.GetString(protocol.TagCallVariable1)
-	cv.Var2 = ff.GetString(protocol.TagCallVariable2)
-	cv.Var3 = ff.GetString(protocol.TagCallVariable3)
-	cv.Var4 = ff.GetString(protocol.TagCallVariable4)
-	cv.Var5 = ff.GetString(protocol.TagCallVariable5)
-	cv.Var6 = ff.GetString(protocol.TagCallVariable6)
-	cv.Var7 = ff.GetString(protocol.TagCallVariable7)
-	cv.Var8 = ff.GetString(protocol.TagCallVariable8)
-	cv.Var9 = ff.GetString(protocol.TagCallVariable9)
-	cv.Var10 = ff.GetString(protocol.TagCallVariable10)
-}
-
 // BeginCallEvent is sent when a new call begins.
+// Protocol Version 24 - BEGIN_CALL_EVENT (MessageType = 23)
 type BeginCallEvent struct {
-	BaseCallEvent
-	ServiceNumber   uint32 // Service number
-	ServiceID       uint32 // Service ID
-	SkillGroupNumber uint32 // Skill group number
-	SkillGroupID    uint32 // Skill group ID
-	SkillGroupPriority uint16 // Skill group priority
-	CallType        uint16 // Type of call
-	CallingDeviceType uint16 // Calling device type
-	CalledDeviceType uint16 // Called device type
-	LastRedirectDeviceType uint16 // Last redirect device type
-	Reserved2       uint16 // Reserved
+	// Fixed Part
+	MonitorID              uint32 // Monitor ID
+	PeripheralID           uint32 // Peripheral ID
+	PeripheralType         uint16 // Type of peripheral (USHORT)
+	NumCTIClients          uint16 // Number of CTI clients (USHORT)
+	NumNamedVariables      uint16 // Number of named variables (USHORT)
+	NumNamedArrays         uint16 // Number of named arrays (USHORT)
+	CallType               uint16 // Type of call (USHORT)
+	ConnectionDeviceIDType uint16 // Device ID type (USHORT)
+	ConnectionCallID       uint32 // Call ID (UINT)
+	CalledPartyDisposition uint16 // Called party disposition (USHORT)
 
 	// Floating fields
-	ANI               string // Automatic Number Identification
-	DNIS              string // Dialed Number Identification Service
-	CallingDeviceID   string // Calling device ID
-	CalledDeviceID    string // Called device ID
-	LastRedirectDeviceID string // Last redirect device ID
-	UserToUserInfo    string // User-to-user information
-	CallVariables     CallVariables
+	ConnectionDeviceID   string // Tag 31
+	ANI                  string // Tag 15
+	DNIS                 string // Tag 16
+	DialedNumber         string // Tag 40
+	CallerEnteredDigits  string // Tag 41
+	UserToUserInfo       string // Tag 17
+	CallWrapupData       string // Tag 30
+	CallVariable1        string // Tag 18
+	CallVariable2        string // Tag 19
+	CallVariable3        string // Tag 20
+	CallVariable4        string // Tag 21
+	CallVariable5        string // Tag 22
+	CallVariable6        string // Tag 23
+	CallVariable7        string // Tag 24
+	CallVariable8        string // Tag 25
+	CallVariable9        string // Tag 26
+	CallVariable10       string // Tag 27
+	RouterCallKeyDay     uint32 // Tag 72
+	RouterCallKeyCallID  uint32 // Tag 73
+	RouterCallKeySeqNum  uint32 // Tag 214
 }
 
 func (m *BeginCallEvent) Type() uint32 {
@@ -92,33 +48,96 @@ func (m *BeginCallEvent) Type() uint32 {
 
 func (m *BeginCallEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint32(m.ServiceNumber)
-	w.WriteUint32(m.ServiceID)
-	w.WriteUint32(m.SkillGroupNumber)
-	w.WriteUint32(m.SkillGroupID)
-	w.WriteUint16(m.SkillGroupPriority)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.NumCTIClients)
+	w.WriteUint16(m.NumNamedVariables)
+	w.WriteUint16(m.NumNamedArrays)
 	w.WriteUint16(m.CallType)
-	w.WriteUint16(m.CallingDeviceType)
-	w.WriteUint16(m.CalledDeviceType)
-	w.WriteUint16(m.LastRedirectDeviceType)
-	w.WriteUint16(m.Reserved2)
-	return w.Bytes(), w.Error()
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
+	w.WriteUint16(m.CalledPartyDisposition)
+
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+
+	// Add floating fields
+	fw := protocol.NewFloatingFieldWriter()
+	if m.ConnectionDeviceID != "" {
+		fw.WriteString(protocol.TagConnectionDeviceID, m.ConnectionDeviceID)
+	}
+	if m.ANI != "" {
+		fw.WriteString(protocol.TagANI, m.ANI)
+	}
+	if m.DNIS != "" {
+		fw.WriteString(protocol.TagDNIS, m.DNIS)
+	}
+	if m.DialedNumber != "" {
+		fw.WriteString(protocol.TagDialedNumber, m.DialedNumber)
+	}
+	if m.CallerEnteredDigits != "" {
+		fw.WriteString(protocol.TagCallerEnteredDigits, m.CallerEnteredDigits)
+	}
+	if m.UserToUserInfo != "" {
+		fw.WriteString(protocol.TagUserToUserInfo, m.UserToUserInfo)
+	}
+	if m.CallWrapupData != "" {
+		fw.WriteString(protocol.TagCallWrapupData, m.CallWrapupData)
+	}
+	if m.CallVariable1 != "" {
+		fw.WriteString(protocol.TagCallVariable1, m.CallVariable1)
+	}
+	if m.CallVariable2 != "" {
+		fw.WriteString(protocol.TagCallVariable2, m.CallVariable2)
+	}
+	if m.CallVariable3 != "" {
+		fw.WriteString(protocol.TagCallVariable3, m.CallVariable3)
+	}
+	if m.CallVariable4 != "" {
+		fw.WriteString(protocol.TagCallVariable4, m.CallVariable4)
+	}
+	if m.CallVariable5 != "" {
+		fw.WriteString(protocol.TagCallVariable5, m.CallVariable5)
+	}
+	if m.CallVariable6 != "" {
+		fw.WriteString(protocol.TagCallVariable6, m.CallVariable6)
+	}
+	if m.CallVariable7 != "" {
+		fw.WriteString(protocol.TagCallVariable7, m.CallVariable7)
+	}
+	if m.CallVariable8 != "" {
+		fw.WriteString(protocol.TagCallVariable8, m.CallVariable8)
+	}
+	if m.CallVariable9 != "" {
+		fw.WriteString(protocol.TagCallVariable9, m.CallVariable9)
+	}
+	if m.CallVariable10 != "" {
+		fw.WriteString(protocol.TagCallVariable10, m.CallVariable10)
+	}
+
+	fixed := w.Bytes()
+	floating := fw.Bytes()
+	result := make([]byte, len(fixed)+len(floating))
+	copy(result, fixed)
+	copy(result[len(fixed):], floating)
+
+	return result, nil
 }
 
 func (m *BeginCallEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.ServiceNumber = r.ReadUint32()
-	m.ServiceID = r.ReadUint32()
-	m.SkillGroupNumber = r.ReadUint32()
-	m.SkillGroupID = r.ReadUint32()
-	m.SkillGroupPriority = r.ReadUint16()
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.NumCTIClients = r.ReadUint16()
+	m.NumNamedVariables = r.ReadUint16()
+	m.NumNamedArrays = r.ReadUint16()
 	m.CallType = r.ReadUint16()
-	m.CallingDeviceType = r.ReadUint16()
-	m.CalledDeviceType = r.ReadUint16()
-	m.LastRedirectDeviceType = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
+	m.CalledPartyDisposition = r.ReadUint16()
 
 	if err := r.Error(); err != nil {
 		return err
@@ -130,21 +149,43 @@ func (m *BeginCallEvent) Decode(data []byte) error {
 		if err != nil {
 			return err
 		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
 		m.ANI = ff.GetString(protocol.TagANI)
 		m.DNIS = ff.GetString(protocol.TagDNIS)
-		m.CallingDeviceID = ff.GetString(protocol.TagCallingDeviceID)
-		m.CalledDeviceID = ff.GetString(protocol.TagCalledDeviceID)
-		m.LastRedirectDeviceID = ff.GetString(protocol.TagLastRedirectDeviceID)
+		m.DialedNumber = ff.GetString(protocol.TagDialedNumber)
+		m.CallerEnteredDigits = ff.GetString(protocol.TagCallerEnteredDigits)
 		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
-		m.CallVariables.parseFrom(ff)
+		m.CallWrapupData = ff.GetString(protocol.TagCallWrapupData)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+		m.RouterCallKeyDay = ff.GetUint32(protocol.TagRouterCallKeyDay)
+		m.RouterCallKeyCallID = ff.GetUint32(protocol.TagRouterCallKeyCallID)
+		m.RouterCallKeySeqNum = ff.GetUint32(protocol.TagRouterCallKeySeqNum)
 	}
 
 	return nil
 }
 
 // EndCallEvent is sent when a call ends.
+// Protocol Version 24 - END_CALL_EVENT (MessageType = 24)
 type EndCallEvent struct {
-	BaseCallEvent
+	// Fixed Part
+	MonitorID              uint32 // Monitor ID
+	PeripheralID           uint32 // Peripheral ID
+	PeripheralType         uint16 // Type of peripheral
+	ConnectionDeviceIDType uint16 // Device ID type
+	ConnectionCallID       uint32 // Call ID
+
+	// Floating fields
+	ConnectionDeviceID string // Tag 31
 }
 
 func (m *EndCallEvent) Type() uint32 {
@@ -153,58 +194,21 @@ func (m *EndCallEvent) Type() uint32 {
 
 func (m *EndCallEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	return w.Bytes(), w.Error()
 }
 
 func (m *EndCallEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	return r.Error()
-}
-
-// CallDataUpdateEvent is sent when call data changes.
-type CallDataUpdateEvent struct {
-	BaseCallEvent
-	NumCTIClients   uint16 // Number of CTI clients
-	NumNamedVars    uint16 // Number of named variables
-	NumNamedArrays  uint16 // Number of named arrays
-	CallType        uint16 // Call type
-	CallDisposition uint32 // Call disposition
-	Reserved2       uint32 // Reserved
-
-	// Floating fields
-	ANI            string
-	DNIS           string
-	UserToUserInfo string
-	CallVariables  CallVariables
-}
-
-func (m *CallDataUpdateEvent) Type() uint32 {
-	return protocol.MsgTypeCallDataUpdateEvent
-}
-
-func (m *CallDataUpdateEvent) Encode() ([]byte, error) {
-	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint16(m.NumCTIClients)
-	w.WriteUint16(m.NumNamedVars)
-	w.WriteUint16(m.NumNamedArrays)
-	w.WriteUint16(m.CallType)
-	w.WriteUint32(m.CallDisposition)
-	w.WriteUint32(m.Reserved2)
-	return w.Bytes(), w.Error()
-}
-
-func (m *CallDataUpdateEvent) Decode(data []byte) error {
-	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.NumCTIClients = r.ReadUint16()
-	m.NumNamedVars = r.ReadUint16()
-	m.NumNamedArrays = r.ReadUint16()
-	m.CallType = r.ReadUint16()
-	m.CallDisposition = r.ReadUint32()
-	m.Reserved2 = r.ReadUint32()
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 
 	if err := r.Error(); err != nil {
 		return err
@@ -215,40 +219,62 @@ func (m *CallDataUpdateEvent) Decode(data []byte) error {
 		if err != nil {
 			return err
 		}
-		m.ANI = ff.GetString(protocol.TagANI)
-		m.DNIS = ff.GetString(protocol.TagDNIS)
-		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
-		m.CallVariables.parseFrom(ff)
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
 	}
 
 	return nil
 }
 
 // CallDeliveredEvent is sent when a call arrives at a device.
+// Protocol Version 24 - CALL_DELIVERED_EVENT (MessageType = 9)
 type CallDeliveredEvent struct {
-	BaseCallEvent
-	LineHandle       uint16 // Line handle
-	LineType         uint16 // Line type
-	ServiceNumber    uint32 // Service number
-	ServiceID        uint32 // Service ID
-	SkillGroupNumber uint32 // Skill group number
-	SkillGroupID     uint32 // Skill group ID
-	SkillGroupPriority uint16 // Skill group priority
-	AlertingDeviceType uint16 // Alerting device type
-	CallingDeviceType uint16 // Calling device type
-	CalledDeviceType uint16 // Called device type
-	LastRedirectDeviceType uint16 // Last redirect device type
-	LocalConnectionState uint16 // Local connection state
-	EventCause       uint16 // Event cause
-	Reserved2        uint16 // Reserved
+	// Fixed Part
+	MonitorID              uint32
+	PeripheralID           uint32
+	PeripheralType         uint16
+	ConnectionDeviceIDType uint16
+	ConnectionCallID       uint32
+	LineHandle             uint16
+	LineType               uint16
+	ServiceNumber          uint32
+	ServiceID              uint32
+	SkillGroupNumber       uint32
+	SkillGroupID           uint32
+	SkillGroupPriority     uint16
+	AlertingDeviceType     uint16
+	CallingDeviceType      uint16
+	CalledDeviceType       uint16
+	LastRedirectDeviceType uint16
+	LocalConnectionState   uint16
+	EventCause             uint16
+	NumNamedVariables      uint16
+	NumNamedArrays         uint16
 
 	// Floating fields
-	ANI               string
-	DNIS              string
-	CallingDeviceID   string
-	CalledDeviceID    string
+	ConnectionDeviceID   string
+	AlertingDeviceID     string
+	CallingDeviceID      string
+	CalledDeviceID       string
 	LastRedirectDeviceID string
-	AlertingDeviceID  string
+	TrunkNumber          uint32
+	TrunkGroupNumber     uint32
+	SecondaryConnCallID  uint32
+	ANI                  string
+	DNIS                 string
+	DialedNumber         string
+	CallerEnteredDigits  string
+	UserToUserInfo       string
+	CallVariable1        string
+	CallVariable2        string
+	CallVariable3        string
+	CallVariable4        string
+	CallVariable5        string
+	CallVariable6        string
+	CallVariable7        string
+	CallVariable8        string
+	CallVariable9        string
+	CallVariable10       string
+	CallWrapupData       string
 }
 
 func (m *CallDeliveredEvent) Type() uint32 {
@@ -257,7 +283,11 @@ func (m *CallDeliveredEvent) Type() uint32 {
 
 func (m *CallDeliveredEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	w.WriteUint16(m.LineHandle)
 	w.WriteUint16(m.LineType)
 	w.WriteUint32(m.ServiceNumber)
@@ -271,13 +301,18 @@ func (m *CallDeliveredEvent) Encode() ([]byte, error) {
 	w.WriteUint16(m.LastRedirectDeviceType)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
+	w.WriteUint16(m.NumNamedVariables)
+	w.WriteUint16(m.NumNamedArrays)
 	return w.Bytes(), w.Error()
 }
 
 func (m *CallDeliveredEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 	m.LineHandle = r.ReadUint16()
 	m.LineType = r.ReadUint16()
 	m.ServiceNumber = r.ReadUint32()
@@ -291,7 +326,8 @@ func (m *CallDeliveredEvent) Decode(data []byte) error {
 	m.LastRedirectDeviceType = r.ReadUint16()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
+	m.NumNamedVariables = r.ReadUint16()
+	m.NumNamedArrays = r.ReadUint16()
 
 	if err := r.Error(); err != nil {
 		return err
@@ -302,40 +338,83 @@ func (m *CallDeliveredEvent) Decode(data []byte) error {
 		if err != nil {
 			return err
 		}
-		m.ANI = ff.GetString(protocol.TagANI)
-		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+		m.AlertingDeviceID = ff.GetString(protocol.TagAlertingDeviceID)
 		m.CallingDeviceID = ff.GetString(protocol.TagCallingDeviceID)
 		m.CalledDeviceID = ff.GetString(protocol.TagCalledDeviceID)
 		m.LastRedirectDeviceID = ff.GetString(protocol.TagLastRedirectDeviceID)
+		m.TrunkNumber = ff.GetUint32(protocol.TagTrunkNumber)
+		m.TrunkGroupNumber = ff.GetUint32(protocol.TagTrunkGroupNumber)
+		m.SecondaryConnCallID = ff.GetUint32(protocol.TagSecondaryConnCallID)
+		m.ANI = ff.GetString(protocol.TagANI)
+		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.DialedNumber = ff.GetString(protocol.TagDialedNumber)
+		m.CallerEnteredDigits = ff.GetString(protocol.TagCallerEnteredDigits)
+		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+		m.CallWrapupData = ff.GetString(protocol.TagCallWrapupData)
 	}
 
 	return nil
 }
 
 // CallEstablishedEvent is sent when a call is answered.
+// Protocol Version 24 - CALL_ESTABLISHED_EVENT (MessageType = 10)
 type CallEstablishedEvent struct {
-	BaseCallEvent
-	LineHandle           uint16
-	LineType             uint16
-	ServiceNumber        uint32
-	ServiceID            uint32
-	SkillGroupNumber     uint32
-	SkillGroupID         uint32
-	SkillGroupPriority   uint16
-	AnsweringDeviceType  uint16
-	CallingDeviceType    uint16
-	CalledDeviceType     uint16
-	LastRedirectDeviceType uint16
-	LocalConnectionState uint16
-	EventCause           uint16
-	Reserved2            uint16
+	// Fixed Part
+	MonitorID              uint32 // Monitor ID (UINT)
+	PeripheralID           uint32 // Peripheral ID (UINT)
+	PeripheralType         uint16 // Peripheral type (USHORT)
+	ConnectionDeviceIDType uint16 // Device ID type (USHORT)
+	ConnectionCallID       uint32 // Call ID (UINT)
+	LineHandle             uint16 // Line handle (USHORT)
+	LineType               uint16 // Line type (USHORT)
+	ServiceNumber          uint32 // Service number (UINT)
+	ServiceID              uint32 // Service ID (UINT)
+	SkillGroupNumber       uint32 // Skill group number (UINT)
+	SkillGroupID           uint32 // Skill group ID (UINT)
+	SkillGroupPriority     uint16 // Skill group priority (USHORT)
+	AnsweringDeviceType    uint16 // Answering device type (USHORT)
+	CallingDeviceType      uint16 // Calling device type (USHORT)
+	CalledDeviceType       uint16 // Called device type (USHORT)
+	LastRedirectDeviceType uint16 // Last redirect device type (USHORT)
+	LocalConnectionState   uint16 // Local connection state (USHORT)
+	EventCause             uint16 // Event cause (USHORT)
 
 	// Floating fields
-	ANI               string
-	DNIS              string
-	CallingDeviceID   string
-	CalledDeviceID    string
-	AnsweringDeviceID string
+	ConnectionDeviceID   string // Tag 31
+	AnsweringDeviceID    string // Tag 33
+	CallingDeviceID      string // Tag 12
+	CalledDeviceID       string // Tag 13
+	LastRedirectDeviceID string // Tag 14
+	TrunkNumber          uint32 // Tag 121
+	TrunkGroupNumber     uint32 // Tag 122
+	SecondaryConnCallID  uint32 // Tag 171
+	ANI                  string // Tag 15
+	DNIS                 string // Tag 16
+	DialedNumber         string // Tag 40
+	CallerEnteredDigits  string // Tag 41
+	UserToUserInfo       string // Tag 17
+	CallVariable1        string // Tag 18
+	CallVariable2        string // Tag 19
+	CallVariable3        string // Tag 20
+	CallVariable4        string // Tag 21
+	CallVariable5        string // Tag 22
+	CallVariable6        string // Tag 23
+	CallVariable7        string // Tag 24
+	CallVariable8        string // Tag 25
+	CallVariable9        string // Tag 26
+	CallVariable10       string // Tag 27
+	CallWrapupData       string // Tag 30
 }
 
 func (m *CallEstablishedEvent) Type() uint32 {
@@ -344,7 +423,11 @@ func (m *CallEstablishedEvent) Type() uint32 {
 
 func (m *CallEstablishedEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	w.WriteUint16(m.LineHandle)
 	w.WriteUint16(m.LineType)
 	w.WriteUint32(m.ServiceNumber)
@@ -358,13 +441,93 @@ func (m *CallEstablishedEvent) Encode() ([]byte, error) {
 	w.WriteUint16(m.LastRedirectDeviceType)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
-	return w.Bytes(), w.Error()
+
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+
+	// Add floating fields
+	fw := protocol.NewFloatingFieldWriter()
+	if m.ConnectionDeviceID != "" {
+		fw.WriteString(protocol.TagConnectionDeviceID, m.ConnectionDeviceID)
+	}
+	if m.AnsweringDeviceID != "" {
+		fw.WriteString(protocol.TagAnsweringDeviceID, m.AnsweringDeviceID)
+	}
+	if m.CallingDeviceID != "" {
+		fw.WriteString(protocol.TagCallingDeviceID, m.CallingDeviceID)
+	}
+	if m.CalledDeviceID != "" {
+		fw.WriteString(protocol.TagCalledDeviceID, m.CalledDeviceID)
+	}
+	if m.LastRedirectDeviceID != "" {
+		fw.WriteString(protocol.TagLastRedirectDeviceID, m.LastRedirectDeviceID)
+	}
+	if m.ANI != "" {
+		fw.WriteString(protocol.TagANI, m.ANI)
+	}
+	if m.DNIS != "" {
+		fw.WriteString(protocol.TagDNIS, m.DNIS)
+	}
+	if m.DialedNumber != "" {
+		fw.WriteString(protocol.TagDialedNumber, m.DialedNumber)
+	}
+	if m.CallerEnteredDigits != "" {
+		fw.WriteString(protocol.TagCallerEnteredDigits, m.CallerEnteredDigits)
+	}
+	if m.UserToUserInfo != "" {
+		fw.WriteString(protocol.TagUserToUserInfo, m.UserToUserInfo)
+	}
+	if m.CallWrapupData != "" {
+		fw.WriteString(protocol.TagCallWrapupData, m.CallWrapupData)
+	}
+	if m.CallVariable1 != "" {
+		fw.WriteString(protocol.TagCallVariable1, m.CallVariable1)
+	}
+	if m.CallVariable2 != "" {
+		fw.WriteString(protocol.TagCallVariable2, m.CallVariable2)
+	}
+	if m.CallVariable3 != "" {
+		fw.WriteString(protocol.TagCallVariable3, m.CallVariable3)
+	}
+	if m.CallVariable4 != "" {
+		fw.WriteString(protocol.TagCallVariable4, m.CallVariable4)
+	}
+	if m.CallVariable5 != "" {
+		fw.WriteString(protocol.TagCallVariable5, m.CallVariable5)
+	}
+	if m.CallVariable6 != "" {
+		fw.WriteString(protocol.TagCallVariable6, m.CallVariable6)
+	}
+	if m.CallVariable7 != "" {
+		fw.WriteString(protocol.TagCallVariable7, m.CallVariable7)
+	}
+	if m.CallVariable8 != "" {
+		fw.WriteString(protocol.TagCallVariable8, m.CallVariable8)
+	}
+	if m.CallVariable9 != "" {
+		fw.WriteString(protocol.TagCallVariable9, m.CallVariable9)
+	}
+	if m.CallVariable10 != "" {
+		fw.WriteString(protocol.TagCallVariable10, m.CallVariable10)
+	}
+
+	fixed := w.Bytes()
+	floating := fw.Bytes()
+	result := make([]byte, len(fixed)+len(floating))
+	copy(result, fixed)
+	copy(result[len(fixed):], floating)
+
+	return result, nil
 }
 
 func (m *CallEstablishedEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 	m.LineHandle = r.ReadUint16()
 	m.LineType = r.ReadUint16()
 	m.ServiceNumber = r.ReadUint32()
@@ -378,7 +541,422 @@ func (m *CallEstablishedEvent) Decode(data []byte) error {
 	m.LastRedirectDeviceType = r.ReadUint16()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	// Parse floating fields
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+		m.AnsweringDeviceID = ff.GetString(protocol.TagAnsweringDeviceID)
+		m.CallingDeviceID = ff.GetString(protocol.TagCallingDeviceID)
+		m.CalledDeviceID = ff.GetString(protocol.TagCalledDeviceID)
+		m.LastRedirectDeviceID = ff.GetString(protocol.TagLastRedirectDeviceID)
+		m.TrunkNumber = ff.GetUint32(protocol.TagTrunkNumber)
+		m.TrunkGroupNumber = ff.GetUint32(protocol.TagTrunkGroupNumber)
+		m.SecondaryConnCallID = ff.GetUint32(protocol.TagSecondaryConnCallID)
+		m.ANI = ff.GetString(protocol.TagANI)
+		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.DialedNumber = ff.GetString(protocol.TagDialedNumber)
+		m.CallerEnteredDigits = ff.GetString(protocol.TagCallerEnteredDigits)
+		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+		m.CallWrapupData = ff.GetString(protocol.TagCallWrapupData)
+	}
+
+	return nil
+}
+
+// CallHeldEvent is sent when a call is placed on hold.
+// Protocol Version 24 - CALL_HELD_EVENT (MessageType = 11)
+type CallHeldEvent struct {
+	// Fixed Part
+	MonitorID              uint32 // Monitor ID (UINT)
+	PeripheralID           uint32 // Peripheral ID (UINT)
+	PeripheralType         uint16 // Peripheral type (USHORT)
+	ConnectionDeviceIDType uint16 // Device ID type (USHORT)
+	ConnectionCallID       uint32 // Call ID (UINT)
+	LineHandle             uint16 // Line handle (USHORT)
+	LineType               uint16 // Line type (USHORT)
+	ServiceNumber          uint32 // Service number (UINT)
+	ServiceID              uint32 // Service ID (UINT)
+	SkillGroupNumber       uint32 // Skill group number (UINT)
+	SkillGroupID           uint32 // Skill group ID (UINT)
+	SkillGroupPriority     uint16 // Skill group priority (USHORT)
+	HoldingDeviceType      uint16 // Holding device type (USHORT)
+	LocalConnectionState   uint16 // Local connection state (USHORT)
+	EventCause             uint16 // Event cause (USHORT)
+
+	// Floating fields
+	ConnectionDeviceID string // Tag 31
+	HoldingDeviceID    string // Tag 34
+	ANI                string // Tag 15
+	DNIS               string // Tag 16
+	UserToUserInfo     string // Tag 17
+	CallVariable1      string // Tag 18
+	CallVariable2      string // Tag 19
+	CallVariable3      string // Tag 20
+	CallVariable4      string // Tag 21
+	CallVariable5      string // Tag 22
+	CallVariable6      string // Tag 23
+	CallVariable7      string // Tag 24
+	CallVariable8      string // Tag 25
+	CallVariable9      string // Tag 26
+	CallVariable10     string // Tag 27
+}
+
+func (m *CallHeldEvent) Type() uint32 {
+	return protocol.MsgTypeCallHeldEvent
+}
+
+func (m *CallHeldEvent) Encode() ([]byte, error) {
+	w := protocol.NewFixedFieldWriter()
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
+	w.WriteUint16(m.LineHandle)
+	w.WriteUint16(m.LineType)
+	w.WriteUint32(m.ServiceNumber)
+	w.WriteUint32(m.ServiceID)
+	w.WriteUint32(m.SkillGroupNumber)
+	w.WriteUint32(m.SkillGroupID)
+	w.WriteUint16(m.SkillGroupPriority)
+	w.WriteUint16(m.HoldingDeviceType)
+	w.WriteUint16(m.LocalConnectionState)
+	w.WriteUint16(m.EventCause)
+
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+
+	// Add floating fields
+	fw := protocol.NewFloatingFieldWriter()
+	if m.ConnectionDeviceID != "" {
+		fw.WriteString(protocol.TagConnectionDeviceID, m.ConnectionDeviceID)
+	}
+	if m.HoldingDeviceID != "" {
+		fw.WriteString(protocol.TagHoldingDeviceID, m.HoldingDeviceID)
+	}
+	if m.ANI != "" {
+		fw.WriteString(protocol.TagANI, m.ANI)
+	}
+	if m.DNIS != "" {
+		fw.WriteString(protocol.TagDNIS, m.DNIS)
+	}
+	if m.UserToUserInfo != "" {
+		fw.WriteString(protocol.TagUserToUserInfo, m.UserToUserInfo)
+	}
+	if m.CallVariable1 != "" {
+		fw.WriteString(protocol.TagCallVariable1, m.CallVariable1)
+	}
+	if m.CallVariable2 != "" {
+		fw.WriteString(protocol.TagCallVariable2, m.CallVariable2)
+	}
+	if m.CallVariable3 != "" {
+		fw.WriteString(protocol.TagCallVariable3, m.CallVariable3)
+	}
+	if m.CallVariable4 != "" {
+		fw.WriteString(protocol.TagCallVariable4, m.CallVariable4)
+	}
+	if m.CallVariable5 != "" {
+		fw.WriteString(protocol.TagCallVariable5, m.CallVariable5)
+	}
+	if m.CallVariable6 != "" {
+		fw.WriteString(protocol.TagCallVariable6, m.CallVariable6)
+	}
+	if m.CallVariable7 != "" {
+		fw.WriteString(protocol.TagCallVariable7, m.CallVariable7)
+	}
+	if m.CallVariable8 != "" {
+		fw.WriteString(protocol.TagCallVariable8, m.CallVariable8)
+	}
+	if m.CallVariable9 != "" {
+		fw.WriteString(protocol.TagCallVariable9, m.CallVariable9)
+	}
+	if m.CallVariable10 != "" {
+		fw.WriteString(protocol.TagCallVariable10, m.CallVariable10)
+	}
+
+	fixed := w.Bytes()
+	floating := fw.Bytes()
+	result := make([]byte, len(fixed)+len(floating))
+	copy(result, fixed)
+	copy(result[len(fixed):], floating)
+
+	return result, nil
+}
+
+func (m *CallHeldEvent) Decode(data []byte) error {
+	r := protocol.NewFixedFieldReader(data)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
+	m.LineHandle = r.ReadUint16()
+	m.LineType = r.ReadUint16()
+	m.ServiceNumber = r.ReadUint32()
+	m.ServiceID = r.ReadUint32()
+	m.SkillGroupNumber = r.ReadUint32()
+	m.SkillGroupID = r.ReadUint32()
+	m.SkillGroupPriority = r.ReadUint16()
+	m.HoldingDeviceType = r.ReadUint16()
+	m.LocalConnectionState = r.ReadUint16()
+	m.EventCause = r.ReadUint16()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	// Parse floating fields
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+		m.HoldingDeviceID = ff.GetString(protocol.TagHoldingDeviceID)
+		m.ANI = ff.GetString(protocol.TagANI)
+		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+	}
+
+	return nil
+}
+
+// CallRetrievedEvent is sent when a call is retrieved from hold.
+// Protocol Version 24 - CALL_RETRIEVED_EVENT (MessageType = 12)
+type CallRetrievedEvent struct {
+	// Fixed Part
+	MonitorID              uint32 // Monitor ID (UINT)
+	PeripheralID           uint32 // Peripheral ID (UINT)
+	PeripheralType         uint16 // Peripheral type (USHORT)
+	ConnectionDeviceIDType uint16 // Device ID type (USHORT)
+	ConnectionCallID       uint32 // Call ID (UINT)
+	LineHandle             uint16 // Line handle (USHORT)
+	LineType               uint16 // Line type (USHORT)
+	ServiceNumber          uint32 // Service number (UINT)
+	ServiceID              uint32 // Service ID (UINT)
+	SkillGroupNumber       uint32 // Skill group number (UINT)
+	SkillGroupID           uint32 // Skill group ID (UINT)
+	SkillGroupPriority     uint16 // Skill group priority (USHORT)
+	RetrievingDeviceType   uint16 // Retrieving device type (USHORT)
+	LocalConnectionState   uint16 // Local connection state (USHORT)
+	EventCause             uint16 // Event cause (USHORT)
+
+	// Floating fields
+	ConnectionDeviceID string // Tag 31
+	RetrievingDeviceID string // Tag 35
+	ANI                string // Tag 15
+	DNIS               string // Tag 16
+	UserToUserInfo     string // Tag 17
+	CallVariable1      string // Tag 18
+	CallVariable2      string // Tag 19
+	CallVariable3      string // Tag 20
+	CallVariable4      string // Tag 21
+	CallVariable5      string // Tag 22
+	CallVariable6      string // Tag 23
+	CallVariable7      string // Tag 24
+	CallVariable8      string // Tag 25
+	CallVariable9      string // Tag 26
+	CallVariable10     string // Tag 27
+}
+
+func (m *CallRetrievedEvent) Type() uint32 {
+	return protocol.MsgTypeCallRetrievedEvent
+}
+
+func (m *CallRetrievedEvent) Encode() ([]byte, error) {
+	w := protocol.NewFixedFieldWriter()
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
+	w.WriteUint16(m.LineHandle)
+	w.WriteUint16(m.LineType)
+	w.WriteUint32(m.ServiceNumber)
+	w.WriteUint32(m.ServiceID)
+	w.WriteUint32(m.SkillGroupNumber)
+	w.WriteUint32(m.SkillGroupID)
+	w.WriteUint16(m.SkillGroupPriority)
+	w.WriteUint16(m.RetrievingDeviceType)
+	w.WriteUint16(m.LocalConnectionState)
+	w.WriteUint16(m.EventCause)
+
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+
+	// Add floating fields
+	fw := protocol.NewFloatingFieldWriter()
+	if m.ConnectionDeviceID != "" {
+		fw.WriteString(protocol.TagConnectionDeviceID, m.ConnectionDeviceID)
+	}
+	if m.RetrievingDeviceID != "" {
+		fw.WriteString(protocol.TagRetrievingDeviceID, m.RetrievingDeviceID)
+	}
+	if m.ANI != "" {
+		fw.WriteString(protocol.TagANI, m.ANI)
+	}
+	if m.DNIS != "" {
+		fw.WriteString(protocol.TagDNIS, m.DNIS)
+	}
+	if m.UserToUserInfo != "" {
+		fw.WriteString(protocol.TagUserToUserInfo, m.UserToUserInfo)
+	}
+	if m.CallVariable1 != "" {
+		fw.WriteString(protocol.TagCallVariable1, m.CallVariable1)
+	}
+	if m.CallVariable2 != "" {
+		fw.WriteString(protocol.TagCallVariable2, m.CallVariable2)
+	}
+	if m.CallVariable3 != "" {
+		fw.WriteString(protocol.TagCallVariable3, m.CallVariable3)
+	}
+	if m.CallVariable4 != "" {
+		fw.WriteString(protocol.TagCallVariable4, m.CallVariable4)
+	}
+	if m.CallVariable5 != "" {
+		fw.WriteString(protocol.TagCallVariable5, m.CallVariable5)
+	}
+	if m.CallVariable6 != "" {
+		fw.WriteString(protocol.TagCallVariable6, m.CallVariable6)
+	}
+	if m.CallVariable7 != "" {
+		fw.WriteString(protocol.TagCallVariable7, m.CallVariable7)
+	}
+	if m.CallVariable8 != "" {
+		fw.WriteString(protocol.TagCallVariable8, m.CallVariable8)
+	}
+	if m.CallVariable9 != "" {
+		fw.WriteString(protocol.TagCallVariable9, m.CallVariable9)
+	}
+	if m.CallVariable10 != "" {
+		fw.WriteString(protocol.TagCallVariable10, m.CallVariable10)
+	}
+
+	fixed := w.Bytes()
+	floating := fw.Bytes()
+	result := make([]byte, len(fixed)+len(floating))
+	copy(result, fixed)
+	copy(result[len(fixed):], floating)
+
+	return result, nil
+}
+
+func (m *CallRetrievedEvent) Decode(data []byte) error {
+	r := protocol.NewFixedFieldReader(data)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
+	m.LineHandle = r.ReadUint16()
+	m.LineType = r.ReadUint16()
+	m.ServiceNumber = r.ReadUint32()
+	m.ServiceID = r.ReadUint32()
+	m.SkillGroupNumber = r.ReadUint32()
+	m.SkillGroupID = r.ReadUint32()
+	m.SkillGroupPriority = r.ReadUint16()
+	m.RetrievingDeviceType = r.ReadUint16()
+	m.LocalConnectionState = r.ReadUint16()
+	m.EventCause = r.ReadUint16()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	// Parse floating fields
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+		m.RetrievingDeviceID = ff.GetString(protocol.TagRetrievingDeviceID)
+		m.ANI = ff.GetString(protocol.TagANI)
+		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+	}
+
+	return nil
+}
+
+// CallClearedEvent is sent when a call is terminated.
+type CallClearedEvent struct {
+	MonitorID              uint32
+	PeripheralID           uint32
+	PeripheralType         uint16
+	ConnectionDeviceIDType uint16
+	ConnectionCallID       uint32
+	LocalConnectionState   uint16
+	EventCause             uint16
+
+	ConnectionDeviceID string
+}
+
+func (m *CallClearedEvent) Type() uint32 {
+	return protocol.MsgTypeCallClearedEvent
+}
+
+func (m *CallClearedEvent) Encode() ([]byte, error) {
+	w := protocol.NewFixedFieldWriter()
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
+	w.WriteUint16(m.LocalConnectionState)
+	w.WriteUint16(m.EventCause)
+	return w.Bytes(), w.Error()
+}
+
+func (m *CallClearedEvent) Decode(data []byte) error {
+	r := protocol.NewFixedFieldReader(data)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
+	m.LocalConnectionState = r.ReadUint16()
+	m.EventCause = r.ReadUint16()
 
 	if err := r.Error(); err != nil {
 		return err
@@ -389,121 +967,25 @@ func (m *CallEstablishedEvent) Decode(data []byte) error {
 		if err != nil {
 			return err
 		}
-		m.ANI = ff.GetString(protocol.TagANI)
-		m.DNIS = ff.GetString(protocol.TagDNIS)
-		m.CallingDeviceID = ff.GetString(protocol.TagCallingDeviceID)
-		m.CalledDeviceID = ff.GetString(protocol.TagCalledDeviceID)
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
 	}
 
 	return nil
 }
 
-// CallHeldEvent is sent when a call is placed on hold.
-type CallHeldEvent struct {
-	BaseCallEvent
-	HoldingDeviceType uint16
-	LocalConnectionState uint16
-	EventCause        uint16
-	Reserved2         uint16
-
-	HoldingDeviceID string
-}
-
-func (m *CallHeldEvent) Type() uint32 {
-	return protocol.MsgTypeCallHeldEvent
-}
-
-func (m *CallHeldEvent) Encode() ([]byte, error) {
-	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint16(m.HoldingDeviceType)
-	w.WriteUint16(m.LocalConnectionState)
-	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
-	return w.Bytes(), w.Error()
-}
-
-func (m *CallHeldEvent) Decode(data []byte) error {
-	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.HoldingDeviceType = r.ReadUint16()
-	m.LocalConnectionState = r.ReadUint16()
-	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
-	return r.Error()
-}
-
-// CallRetrievedEvent is sent when a call is retrieved from hold.
-type CallRetrievedEvent struct {
-	BaseCallEvent
-	RetrievingDeviceType uint16
-	LocalConnectionState uint16
-	EventCause          uint16
-	Reserved2           uint16
-
-	RetrievingDeviceID string
-}
-
-func (m *CallRetrievedEvent) Type() uint32 {
-	return protocol.MsgTypeCallRetrievedEvent
-}
-
-func (m *CallRetrievedEvent) Encode() ([]byte, error) {
-	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint16(m.RetrievingDeviceType)
-	w.WriteUint16(m.LocalConnectionState)
-	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
-	return w.Bytes(), w.Error()
-}
-
-func (m *CallRetrievedEvent) Decode(data []byte) error {
-	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.RetrievingDeviceType = r.ReadUint16()
-	m.LocalConnectionState = r.ReadUint16()
-	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
-	return r.Error()
-}
-
-// CallClearedEvent is sent when a call is terminated.
-type CallClearedEvent struct {
-	BaseCallEvent
-	LocalConnectionState uint16
-	EventCause          uint16
-}
-
-func (m *CallClearedEvent) Type() uint32 {
-	return protocol.MsgTypeCallClearedEvent
-}
-
-func (m *CallClearedEvent) Encode() ([]byte, error) {
-	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint16(m.LocalConnectionState)
-	w.WriteUint16(m.EventCause)
-	return w.Bytes(), w.Error()
-}
-
-func (m *CallClearedEvent) Decode(data []byte) error {
-	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.LocalConnectionState = r.ReadUint16()
-	m.EventCause = r.ReadUint16()
-	return r.Error()
-}
-
 // CallConnectionClearedEvent is sent when a party leaves a call.
 type CallConnectionClearedEvent struct {
-	BaseCallEvent
-	ReleasingDeviceType uint16
-	LocalConnectionState uint16
-	EventCause          uint16
-	Reserved2           uint16
+	MonitorID              uint32
+	PeripheralID           uint32
+	PeripheralType         uint16
+	ConnectionDeviceIDType uint16
+	ConnectionCallID       uint32
+	ReleasingDeviceType    uint16
+	LocalConnectionState   uint16
+	EventCause             uint16
 
-	ReleasingDeviceID string
+	ConnectionDeviceID string
+	ReleasingDeviceID  string
 }
 
 func (m *CallConnectionClearedEvent) Type() uint32 {
@@ -512,42 +994,66 @@ func (m *CallConnectionClearedEvent) Type() uint32 {
 
 func (m *CallConnectionClearedEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	w.WriteUint16(m.ReleasingDeviceType)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
 	return w.Bytes(), w.Error()
 }
 
 func (m *CallConnectionClearedEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 	m.ReleasingDeviceType = r.ReadUint16()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
-	return r.Error()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+		m.ReleasingDeviceID = ff.GetString(protocol.TagReleasingDeviceID)
+	}
+
+	return nil
 }
 
 // CallOriginatedEvent is sent when an outbound call is initiated.
 type CallOriginatedEvent struct {
-	BaseCallEvent
-	LineHandle         uint16
-	LineType           uint16
-	ServiceNumber      uint32
-	ServiceID          uint32
-	SkillGroupNumber   uint32
-	SkillGroupID       uint32
-	SkillGroupPriority uint16
-	CallingDeviceType  uint16
-	CalledDeviceType   uint16
-	LocalConnectionState uint16
-	EventCause         uint16
-	Reserved2          uint16
+	MonitorID              uint32
+	PeripheralID           uint32
+	PeripheralType         uint16
+	ConnectionDeviceIDType uint16
+	ConnectionCallID       uint32
+	LineHandle             uint16
+	LineType               uint16
+	ServiceNumber          uint32
+	ServiceID              uint32
+	SkillGroupNumber       uint32
+	SkillGroupID           uint32
+	SkillGroupPriority     uint16
+	CallingDeviceType      uint16
+	CalledDeviceType       uint16
+	LocalConnectionState   uint16
+	EventCause             uint16
 
-	CallingDeviceID string
-	CalledDeviceID  string
+	ConnectionDeviceID string
+	CallingDeviceID    string
+	CalledDeviceID     string
 }
 
 func (m *CallOriginatedEvent) Type() uint32 {
@@ -556,7 +1062,11 @@ func (m *CallOriginatedEvent) Type() uint32 {
 
 func (m *CallOriginatedEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	w.WriteUint16(m.LineHandle)
 	w.WriteUint16(m.LineType)
 	w.WriteUint32(m.ServiceNumber)
@@ -568,13 +1078,16 @@ func (m *CallOriginatedEvent) Encode() ([]byte, error) {
 	w.WriteUint16(m.CalledDeviceType)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
 	return w.Bytes(), w.Error()
 }
 
 func (m *CallOriginatedEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 	m.LineHandle = r.ReadUint16()
 	m.LineType = r.ReadUint16()
 	m.ServiceNumber = r.ReadUint32()
@@ -586,7 +1099,6 @@ func (m *CallOriginatedEvent) Decode(data []byte) error {
 	m.CalledDeviceType = r.ReadUint16()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
 
 	if err := r.Error(); err != nil {
 		return err
@@ -597,6 +1109,7 @@ func (m *CallOriginatedEvent) Decode(data []byte) error {
 		if err != nil {
 			return err
 		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
 		m.CallingDeviceID = ff.GetString(protocol.TagCallingDeviceID)
 		m.CalledDeviceID = ff.GetString(protocol.TagCalledDeviceID)
 	}
@@ -606,14 +1119,19 @@ func (m *CallOriginatedEvent) Decode(data []byte) error {
 
 // CallFailedEvent is sent when a call fails.
 type CallFailedEvent struct {
-	BaseCallEvent
-	FailingDeviceType uint16
-	CalledDeviceType  uint16
-	LocalConnectionState uint16
-	EventCause        uint16
+	MonitorID              uint32
+	PeripheralID           uint32
+	PeripheralType         uint16
+	ConnectionDeviceIDType uint16
+	ConnectionCallID       uint32
+	FailingDeviceType      uint16
+	CalledDeviceType       uint16
+	LocalConnectionState   uint16
+	EventCause             uint16
 
-	FailingDeviceID string
-	CalledDeviceID  string
+	ConnectionDeviceID string
+	FailingDeviceID    string
+	CalledDeviceID     string
 }
 
 func (m *CallFailedEvent) Type() uint32 {
@@ -622,7 +1140,11 @@ func (m *CallFailedEvent) Type() uint32 {
 
 func (m *CallFailedEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	w.WriteUint16(m.FailingDeviceType)
 	w.WriteUint16(m.CalledDeviceType)
 	w.WriteUint16(m.LocalConnectionState)
@@ -632,31 +1154,73 @@ func (m *CallFailedEvent) Encode() ([]byte, error) {
 
 func (m *CallFailedEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 	m.FailingDeviceType = r.ReadUint16()
 	m.CalledDeviceType = r.ReadUint16()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	return r.Error()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+		m.FailingDeviceID = ff.GetString(protocol.TagFailingDeviceID)
+		m.CalledDeviceID = ff.GetString(protocol.TagCalledDeviceID)
+	}
+
+	return nil
 }
 
 // CallConferencedEvent is sent when a conference call is created.
+// Protocol Version 24 - CALL_CONFERENCED_EVENT (MessageType = 17)
 type CallConferencedEvent struct {
-	BaseCallEvent
-	PrimaryCallID        uint32
-	PrimaryDeviceType    uint16
-	PrimaryDeviceIDType  uint16
-	SecondaryCallID      uint32
-	SecondaryDeviceType  uint16
-	SecondaryDeviceIDType uint16
-	ControllerDeviceType uint16
-	LocalConnectionState uint16
-	EventCause           uint16
-	Reserved2            uint16
+	// Fixed Part
+	MonitorID                       uint32 // Monitor ID (UINT)
+	PeripheralID                    uint32 // Peripheral ID (UINT)
+	PeripheralType                  uint16 // Peripheral type (USHORT)
+	PrimaryDeviceIDType             uint16 // Primary device ID type (USHORT)
+	PrimaryCallID                   uint32 // Primary call ID (UINT)
+	LineHandle                      uint16 // Line handle (USHORT)
+	LineType                        uint16 // Line type (USHORT)
+	SkillGroupNumber                uint32 // Skill group number (UINT)
+	SkillGroupID                    uint32 // Skill group ID (UINT)
+	SkillGroupPriority              uint16 // Skill group priority (USHORT)
+	NumParties                      uint16 // Number of parties (USHORT)
+	SecondaryDeviceIDType           uint16 // Secondary device ID type (USHORT)
+	SecondaryCallID                 uint32 // Secondary call ID (UINT) - Note: crosses boundary
+	ControllerDeviceType            uint16 // Controller device type (USHORT)
+	AddedPartyDeviceType            uint16 // Added party device type (USHORT)
+	LocalConnectionState            uint16 // Local connection state (USHORT)
+	EventCause                      uint16 // Event cause (USHORT)
 
-	PrimaryDeviceID    string
-	SecondaryDeviceID  string
-	ControllerDeviceID string
+	// Floating fields
+	PrimaryDeviceID     string // Tag 46
+	SecondaryDeviceID   string // Tag 47
+	ControllerDeviceID  string // Tag 42
+	AddedPartyDeviceID  string // Tag 43
+	ANI                 string // Tag 15
+	DNIS                string // Tag 16
+	UserToUserInfo      string // Tag 17
+	CallVariable1       string // Tag 18
+	CallVariable2       string // Tag 19
+	CallVariable3       string // Tag 20
+	CallVariable4       string // Tag 21
+	CallVariable5       string // Tag 22
+	CallVariable6       string // Tag 23
+	CallVariable7       string // Tag 24
+	CallVariable8       string // Tag 25
+	CallVariable9       string // Tag 26
+	CallVariable10      string // Tag 27
 }
 
 func (m *CallConferencedEvent) Type() uint32 {
@@ -665,54 +1229,183 @@ func (m *CallConferencedEvent) Type() uint32 {
 
 func (m *CallConferencedEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint32(m.PrimaryCallID)
-	w.WriteUint16(m.PrimaryDeviceType)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
 	w.WriteUint16(m.PrimaryDeviceIDType)
-	w.WriteUint32(m.SecondaryCallID)
-	w.WriteUint16(m.SecondaryDeviceType)
+	w.WriteUint32(m.PrimaryCallID)
+	w.WriteUint16(m.LineHandle)
+	w.WriteUint16(m.LineType)
+	w.WriteUint32(m.SkillGroupNumber)
+	w.WriteUint32(m.SkillGroupID)
+	w.WriteUint16(m.SkillGroupPriority)
+	w.WriteUint16(m.NumParties)
 	w.WriteUint16(m.SecondaryDeviceIDType)
+	w.WriteUint32(m.SecondaryCallID)
 	w.WriteUint16(m.ControllerDeviceType)
+	w.WriteUint16(m.AddedPartyDeviceType)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
-	return w.Bytes(), w.Error()
+
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+
+	// Add floating fields
+	fw := protocol.NewFloatingFieldWriter()
+	if m.PrimaryDeviceID != "" {
+		fw.WriteString(protocol.TagPrimaryDeviceID, m.PrimaryDeviceID)
+	}
+	if m.SecondaryDeviceID != "" {
+		fw.WriteString(protocol.TagSecondaryDeviceID, m.SecondaryDeviceID)
+	}
+	if m.ControllerDeviceID != "" {
+		fw.WriteString(protocol.TagControllerDeviceID, m.ControllerDeviceID)
+	}
+	if m.AddedPartyDeviceID != "" {
+		fw.WriteString(protocol.TagAddedPartyDeviceID, m.AddedPartyDeviceID)
+	}
+	if m.ANI != "" {
+		fw.WriteString(protocol.TagANI, m.ANI)
+	}
+	if m.DNIS != "" {
+		fw.WriteString(protocol.TagDNIS, m.DNIS)
+	}
+	if m.UserToUserInfo != "" {
+		fw.WriteString(protocol.TagUserToUserInfo, m.UserToUserInfo)
+	}
+	if m.CallVariable1 != "" {
+		fw.WriteString(protocol.TagCallVariable1, m.CallVariable1)
+	}
+	if m.CallVariable2 != "" {
+		fw.WriteString(protocol.TagCallVariable2, m.CallVariable2)
+	}
+	if m.CallVariable3 != "" {
+		fw.WriteString(protocol.TagCallVariable3, m.CallVariable3)
+	}
+	if m.CallVariable4 != "" {
+		fw.WriteString(protocol.TagCallVariable4, m.CallVariable4)
+	}
+	if m.CallVariable5 != "" {
+		fw.WriteString(protocol.TagCallVariable5, m.CallVariable5)
+	}
+	if m.CallVariable6 != "" {
+		fw.WriteString(protocol.TagCallVariable6, m.CallVariable6)
+	}
+	if m.CallVariable7 != "" {
+		fw.WriteString(protocol.TagCallVariable7, m.CallVariable7)
+	}
+	if m.CallVariable8 != "" {
+		fw.WriteString(protocol.TagCallVariable8, m.CallVariable8)
+	}
+	if m.CallVariable9 != "" {
+		fw.WriteString(protocol.TagCallVariable9, m.CallVariable9)
+	}
+	if m.CallVariable10 != "" {
+		fw.WriteString(protocol.TagCallVariable10, m.CallVariable10)
+	}
+
+	fixed := w.Bytes()
+	floating := fw.Bytes()
+	result := make([]byte, len(fixed)+len(floating))
+	copy(result, fixed)
+	copy(result[len(fixed):], floating)
+
+	return result, nil
 }
 
 func (m *CallConferencedEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.PrimaryCallID = r.ReadUint32()
-	m.PrimaryDeviceType = r.ReadUint16()
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
 	m.PrimaryDeviceIDType = r.ReadUint16()
-	m.SecondaryCallID = r.ReadUint32()
-	m.SecondaryDeviceType = r.ReadUint16()
+	m.PrimaryCallID = r.ReadUint32()
+	m.LineHandle = r.ReadUint16()
+	m.LineType = r.ReadUint16()
+	m.SkillGroupNumber = r.ReadUint32()
+	m.SkillGroupID = r.ReadUint32()
+	m.SkillGroupPriority = r.ReadUint16()
+	m.NumParties = r.ReadUint16()
 	m.SecondaryDeviceIDType = r.ReadUint16()
+	m.SecondaryCallID = r.ReadUint32()
 	m.ControllerDeviceType = r.ReadUint16()
+	m.AddedPartyDeviceType = r.ReadUint16()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
-	return r.Error()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	// Parse floating fields
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.PrimaryDeviceID = ff.GetString(protocol.TagPrimaryDeviceID)
+		m.SecondaryDeviceID = ff.GetString(protocol.TagSecondaryDeviceID)
+		m.ControllerDeviceID = ff.GetString(protocol.TagControllerDeviceID)
+		m.AddedPartyDeviceID = ff.GetString(protocol.TagAddedPartyDeviceID)
+		m.ANI = ff.GetString(protocol.TagANI)
+		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+	}
+
+	return nil
 }
 
 // CallTransferredEvent is sent when a call is transferred.
+// Protocol Version 24 - CALL_TRANSFERRED_EVENT (MessageType = 18)
 type CallTransferredEvent struct {
-	BaseCallEvent
-	PrimaryCallID         uint32
-	PrimaryDeviceType     uint16
-	PrimaryDeviceIDType   uint16
-	SecondaryCallID       uint32
-	SecondaryDeviceType   uint16
-	SecondaryDeviceIDType uint16
-	TransferringDeviceType uint16
-	TransferredDeviceType uint16
-	LocalConnectionState  uint16
-	EventCause            uint16
+	// Fixed Part
+	MonitorID                uint32 // Monitor ID (UINT)
+	PeripheralID             uint32 // Peripheral ID (UINT)
+	PeripheralType           uint16 // Peripheral type (USHORT)
+	PrimaryDeviceIDType      uint16 // Primary device ID type (USHORT)
+	PrimaryCallID            uint32 // Primary call ID (UINT)
+	LineHandle               uint16 // Line handle (USHORT)
+	LineType                 uint16 // Line type (USHORT)
+	SkillGroupNumber         uint32 // Skill group number (UINT)
+	SkillGroupID             uint32 // Skill group ID (UINT)
+	SkillGroupPriority       uint16 // Skill group priority (USHORT)
+	NumParties               uint16 // Number of parties (USHORT)
+	SecondaryDeviceIDType    uint16 // Secondary device ID type (USHORT)
+	SecondaryCallID          uint32 // Secondary call ID (UINT)
+	TransferringDeviceType   uint16 // Transferring device type (USHORT)
+	TransferredDeviceType    uint16 // Transferred device type (USHORT)
+	LocalConnectionState     uint16 // Local connection state (USHORT)
+	EventCause               uint16 // Event cause (USHORT)
 
-	PrimaryDeviceID      string
-	SecondaryDeviceID    string
-	TransferringDeviceID string
-	TransferredDeviceID  string
+	// Floating fields
+	PrimaryDeviceID      string // Tag 46
+	SecondaryDeviceID    string // Tag 47
+	TransferringDeviceID string // Tag 38
+	TransferredDeviceID  string // Tag 39
+	ANI                  string // Tag 15
+	DNIS                 string // Tag 16
+	UserToUserInfo       string // Tag 17
+	CallVariable1        string // Tag 18
+	CallVariable2        string // Tag 19
+	CallVariable3        string // Tag 20
+	CallVariable4        string // Tag 21
+	CallVariable5        string // Tag 22
+	CallVariable6        string // Tag 23
+	CallVariable7        string // Tag 24
+	CallVariable8        string // Tag 25
+	CallVariable9        string // Tag 26
+	CallVariable10       string // Tag 27
 }
 
 func (m *CallTransferredEvent) Type() uint32 {
@@ -721,56 +1414,154 @@ func (m *CallTransferredEvent) Type() uint32 {
 
 func (m *CallTransferredEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint32(m.PrimaryCallID)
-	w.WriteUint16(m.PrimaryDeviceType)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
 	w.WriteUint16(m.PrimaryDeviceIDType)
-	w.WriteUint32(m.SecondaryCallID)
-	w.WriteUint16(m.SecondaryDeviceType)
+	w.WriteUint32(m.PrimaryCallID)
+	w.WriteUint16(m.LineHandle)
+	w.WriteUint16(m.LineType)
+	w.WriteUint32(m.SkillGroupNumber)
+	w.WriteUint32(m.SkillGroupID)
+	w.WriteUint16(m.SkillGroupPriority)
+	w.WriteUint16(m.NumParties)
 	w.WriteUint16(m.SecondaryDeviceIDType)
+	w.WriteUint32(m.SecondaryCallID)
 	w.WriteUint16(m.TransferringDeviceType)
 	w.WriteUint16(m.TransferredDeviceType)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	return w.Bytes(), w.Error()
+
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+
+	// Add floating fields
+	fw := protocol.NewFloatingFieldWriter()
+	if m.PrimaryDeviceID != "" {
+		fw.WriteString(protocol.TagPrimaryDeviceID, m.PrimaryDeviceID)
+	}
+	if m.SecondaryDeviceID != "" {
+		fw.WriteString(protocol.TagSecondaryDeviceID, m.SecondaryDeviceID)
+	}
+	if m.TransferringDeviceID != "" {
+		fw.WriteString(protocol.TagTransferringDeviceID, m.TransferringDeviceID)
+	}
+	if m.TransferredDeviceID != "" {
+		fw.WriteString(protocol.TagTransferredDeviceID, m.TransferredDeviceID)
+	}
+	if m.ANI != "" {
+		fw.WriteString(protocol.TagANI, m.ANI)
+	}
+	if m.DNIS != "" {
+		fw.WriteString(protocol.TagDNIS, m.DNIS)
+	}
+	if m.UserToUserInfo != "" {
+		fw.WriteString(protocol.TagUserToUserInfo, m.UserToUserInfo)
+	}
+	if m.CallVariable1 != "" {
+		fw.WriteString(protocol.TagCallVariable1, m.CallVariable1)
+	}
+	if m.CallVariable2 != "" {
+		fw.WriteString(protocol.TagCallVariable2, m.CallVariable2)
+	}
+	if m.CallVariable3 != "" {
+		fw.WriteString(protocol.TagCallVariable3, m.CallVariable3)
+	}
+	if m.CallVariable4 != "" {
+		fw.WriteString(protocol.TagCallVariable4, m.CallVariable4)
+	}
+	if m.CallVariable5 != "" {
+		fw.WriteString(protocol.TagCallVariable5, m.CallVariable5)
+	}
+	if m.CallVariable6 != "" {
+		fw.WriteString(protocol.TagCallVariable6, m.CallVariable6)
+	}
+	if m.CallVariable7 != "" {
+		fw.WriteString(protocol.TagCallVariable7, m.CallVariable7)
+	}
+	if m.CallVariable8 != "" {
+		fw.WriteString(protocol.TagCallVariable8, m.CallVariable8)
+	}
+	if m.CallVariable9 != "" {
+		fw.WriteString(protocol.TagCallVariable9, m.CallVariable9)
+	}
+	if m.CallVariable10 != "" {
+		fw.WriteString(protocol.TagCallVariable10, m.CallVariable10)
+	}
+
+	fixed := w.Bytes()
+	floating := fw.Bytes()
+	result := make([]byte, len(fixed)+len(floating))
+	copy(result, fixed)
+	copy(result[len(fixed):], floating)
+
+	return result, nil
 }
 
 func (m *CallTransferredEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.PrimaryCallID = r.ReadUint32()
-	m.PrimaryDeviceType = r.ReadUint16()
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
 	m.PrimaryDeviceIDType = r.ReadUint16()
-	m.SecondaryCallID = r.ReadUint32()
-	m.SecondaryDeviceType = r.ReadUint16()
+	m.PrimaryCallID = r.ReadUint32()
+	m.LineHandle = r.ReadUint16()
+	m.LineType = r.ReadUint16()
+	m.SkillGroupNumber = r.ReadUint32()
+	m.SkillGroupID = r.ReadUint32()
+	m.SkillGroupPriority = r.ReadUint16()
+	m.NumParties = r.ReadUint16()
 	m.SecondaryDeviceIDType = r.ReadUint16()
+	m.SecondaryCallID = r.ReadUint32()
 	m.TransferringDeviceType = r.ReadUint16()
 	m.TransferredDeviceType = r.ReadUint16()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	return r.Error()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	// Parse floating fields
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.PrimaryDeviceID = ff.GetString(protocol.TagPrimaryDeviceID)
+		m.SecondaryDeviceID = ff.GetString(protocol.TagSecondaryDeviceID)
+		m.TransferringDeviceID = ff.GetString(protocol.TagTransferringDeviceID)
+		m.TransferredDeviceID = ff.GetString(protocol.TagTransferredDeviceID)
+		m.ANI = ff.GetString(protocol.TagANI)
+		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+	}
+
+	return nil
 }
 
 // CallQueuedEvent is sent when a call is queued.
 type CallQueuedEvent struct {
-	BaseCallEvent
-	ServiceNumber    uint32
-	ServiceID        uint32
-	SkillGroupNumber uint32
-	SkillGroupID     uint32
-	SkillGroupPriority uint16
-	QueueDeviceType  uint16
-	CallingDeviceType uint16
-	CalledDeviceType uint16
-	LastRedirectDeviceType uint16
-	LocalConnectionState uint16
-	EventCause       uint16
-	Reserved2        uint16
+	MonitorID              uint32
+	PeripheralID           uint32
+	PeripheralType         uint16
+	ConnectionDeviceIDType uint16
+	ConnectionCallID       uint32
+	LocalConnectionState   uint16
+	EventCause             uint16
 
-	QueueDeviceID        string
-	CallingDeviceID      string
-	CalledDeviceID       string
-	LastRedirectDeviceID string
+	ConnectionDeviceID string
 }
 
 func (m *CallQueuedEvent) Type() uint32 {
@@ -779,51 +1570,52 @@ func (m *CallQueuedEvent) Type() uint32 {
 
 func (m *CallQueuedEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint32(m.ServiceNumber)
-	w.WriteUint32(m.ServiceID)
-	w.WriteUint32(m.SkillGroupNumber)
-	w.WriteUint32(m.SkillGroupID)
-	w.WriteUint16(m.SkillGroupPriority)
-	w.WriteUint16(m.QueueDeviceType)
-	w.WriteUint16(m.CallingDeviceType)
-	w.WriteUint16(m.CalledDeviceType)
-	w.WriteUint16(m.LastRedirectDeviceType)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
 	return w.Bytes(), w.Error()
 }
 
 func (m *CallQueuedEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.ServiceNumber = r.ReadUint32()
-	m.ServiceID = r.ReadUint32()
-	m.SkillGroupNumber = r.ReadUint32()
-	m.SkillGroupID = r.ReadUint32()
-	m.SkillGroupPriority = r.ReadUint16()
-	m.QueueDeviceType = r.ReadUint16()
-	m.CallingDeviceType = r.ReadUint16()
-	m.CalledDeviceType = r.ReadUint16()
-	m.LastRedirectDeviceType = r.ReadUint16()
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
-	return r.Error()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+	}
+
+	return nil
 }
 
 // CallDequeuedEvent is sent when a call is removed from a queue.
 type CallDequeuedEvent struct {
-	BaseCallEvent
-	ServiceNumber   uint32
-	ServiceID       uint32
-	QueueDeviceType uint16
-	LocalConnectionState uint16
-	EventCause      uint16
-	Reserved2       uint16
+	MonitorID              uint32
+	PeripheralID           uint32
+	PeripheralType         uint16
+	ConnectionDeviceIDType uint16
+	ConnectionCallID       uint32
+	LocalConnectionState   uint16
+	EventCause             uint16
 
-	QueueDeviceID string
+	ConnectionDeviceID string
 }
 
 func (m *CallDequeuedEvent) Type() uint32 {
@@ -832,24 +1624,224 @@ func (m *CallDequeuedEvent) Type() uint32 {
 
 func (m *CallDequeuedEvent) Encode() ([]byte, error) {
 	w := protocol.NewFixedFieldWriter()
-	m.BaseCallEvent.writeTo(w)
-	w.WriteUint32(m.ServiceNumber)
-	w.WriteUint32(m.ServiceID)
-	w.WriteUint16(m.QueueDeviceType)
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
 	w.WriteUint16(m.LocalConnectionState)
 	w.WriteUint16(m.EventCause)
-	w.WriteUint16(m.Reserved2)
 	return w.Bytes(), w.Error()
 }
 
 func (m *CallDequeuedEvent) Decode(data []byte) error {
 	r := protocol.NewFixedFieldReader(data)
-	m.BaseCallEvent.readFrom(r)
-	m.ServiceNumber = r.ReadUint32()
-	m.ServiceID = r.ReadUint32()
-	m.QueueDeviceType = r.ReadUint16()
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
 	m.LocalConnectionState = r.ReadUint16()
 	m.EventCause = r.ReadUint16()
-	m.Reserved2 = r.ReadUint16()
-	return r.Error()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+	}
+
+	return nil
+}
+
+// CallDataUpdateEvent is sent when call data changes.
+// Protocol Version 24 - CALL_DATA_UPDATE_EVENT (MessageType = 25)
+type CallDataUpdateEvent struct {
+	// Fixed Part
+	MonitorID                  uint32 // Monitor ID (UINT)
+	PeripheralID               uint32 // Peripheral ID (UINT)
+	PeripheralType             uint16 // Peripheral type (USHORT)
+	NumCTIClients              uint16 // Number of CTI clients (USHORT)
+	NumNamedVariables          uint16 // Number of named variables (USHORT)
+	NumNamedArrays             uint16 // Number of named arrays (USHORT)
+	CallType                   uint16 // Type of call (USHORT)
+	ConnectionDeviceIDType     uint16 // Device ID type (USHORT)
+	ConnectionCallID           uint32 // Call ID (UINT)
+	NewConnectionDeviceIDType  uint16 // New connection device ID type (USHORT)
+	NewConnectionCallID        uint32 // New connection call ID (UINT)
+	CalledPartyDisposition     uint16 // Called party disposition (USHORT)
+	CampaignID                 uint32 // Campaign ID (UINT)
+	QueryRuleID                uint32 // Query rule ID (UINT)
+
+	// Floating fields
+	ConnectionDeviceID    string // Tag 31
+	NewConnectionDeviceID string // Tag 186
+	ANI                   string // Tag 15
+	DNIS                  string // Tag 16
+	DialedNumber          string // Tag 40
+	CallerEnteredDigits   string // Tag 41
+	UserToUserInfo        string // Tag 17
+	CallWrapupData        string // Tag 30
+	CallVariable1         string // Tag 18
+	CallVariable2         string // Tag 19
+	CallVariable3         string // Tag 20
+	CallVariable4         string // Tag 21
+	CallVariable5         string // Tag 22
+	CallVariable6         string // Tag 23
+	CallVariable7         string // Tag 24
+	CallVariable8         string // Tag 25
+	CallVariable9         string // Tag 26
+	CallVariable10        string // Tag 27
+	RouterCallKeyDay      uint32 // Tag 72
+	RouterCallKeyCallID   uint32 // Tag 73
+	RouterCallKeySeqNum   uint32 // Tag 214
+}
+
+func (m *CallDataUpdateEvent) Type() uint32 {
+	return protocol.MsgTypeCallDataUpdateEvent
+}
+
+func (m *CallDataUpdateEvent) Encode() ([]byte, error) {
+	w := protocol.NewFixedFieldWriter()
+	w.WriteUint32(m.MonitorID)
+	w.WriteUint32(m.PeripheralID)
+	w.WriteUint16(m.PeripheralType)
+	w.WriteUint16(m.NumCTIClients)
+	w.WriteUint16(m.NumNamedVariables)
+	w.WriteUint16(m.NumNamedArrays)
+	w.WriteUint16(m.CallType)
+	w.WriteUint16(m.ConnectionDeviceIDType)
+	w.WriteUint32(m.ConnectionCallID)
+	w.WriteUint16(m.NewConnectionDeviceIDType)
+	w.WriteUint32(m.NewConnectionCallID)
+	w.WriteUint16(m.CalledPartyDisposition)
+	w.WriteUint32(m.CampaignID)
+	w.WriteUint32(m.QueryRuleID)
+
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+
+	// Add floating fields
+	fw := protocol.NewFloatingFieldWriter()
+	if m.ConnectionDeviceID != "" {
+		fw.WriteString(protocol.TagConnectionDeviceID, m.ConnectionDeviceID)
+	}
+	if m.NewConnectionDeviceID != "" {
+		fw.WriteString(protocol.TagNewConnectionDeviceID, m.NewConnectionDeviceID)
+	}
+	if m.ANI != "" {
+		fw.WriteString(protocol.TagANI, m.ANI)
+	}
+	if m.DNIS != "" {
+		fw.WriteString(protocol.TagDNIS, m.DNIS)
+	}
+	if m.DialedNumber != "" {
+		fw.WriteString(protocol.TagDialedNumber, m.DialedNumber)
+	}
+	if m.CallerEnteredDigits != "" {
+		fw.WriteString(protocol.TagCallerEnteredDigits, m.CallerEnteredDigits)
+	}
+	if m.UserToUserInfo != "" {
+		fw.WriteString(protocol.TagUserToUserInfo, m.UserToUserInfo)
+	}
+	if m.CallWrapupData != "" {
+		fw.WriteString(protocol.TagCallWrapupData, m.CallWrapupData)
+	}
+	if m.CallVariable1 != "" {
+		fw.WriteString(protocol.TagCallVariable1, m.CallVariable1)
+	}
+	if m.CallVariable2 != "" {
+		fw.WriteString(protocol.TagCallVariable2, m.CallVariable2)
+	}
+	if m.CallVariable3 != "" {
+		fw.WriteString(protocol.TagCallVariable3, m.CallVariable3)
+	}
+	if m.CallVariable4 != "" {
+		fw.WriteString(protocol.TagCallVariable4, m.CallVariable4)
+	}
+	if m.CallVariable5 != "" {
+		fw.WriteString(protocol.TagCallVariable5, m.CallVariable5)
+	}
+	if m.CallVariable6 != "" {
+		fw.WriteString(protocol.TagCallVariable6, m.CallVariable6)
+	}
+	if m.CallVariable7 != "" {
+		fw.WriteString(protocol.TagCallVariable7, m.CallVariable7)
+	}
+	if m.CallVariable8 != "" {
+		fw.WriteString(protocol.TagCallVariable8, m.CallVariable8)
+	}
+	if m.CallVariable9 != "" {
+		fw.WriteString(protocol.TagCallVariable9, m.CallVariable9)
+	}
+	if m.CallVariable10 != "" {
+		fw.WriteString(protocol.TagCallVariable10, m.CallVariable10)
+	}
+
+	fixed := w.Bytes()
+	floating := fw.Bytes()
+	result := make([]byte, len(fixed)+len(floating))
+	copy(result, fixed)
+	copy(result[len(fixed):], floating)
+
+	return result, nil
+}
+
+func (m *CallDataUpdateEvent) Decode(data []byte) error {
+	r := protocol.NewFixedFieldReader(data)
+	m.MonitorID = r.ReadUint32()
+	m.PeripheralID = r.ReadUint32()
+	m.PeripheralType = r.ReadUint16()
+	m.NumCTIClients = r.ReadUint16()
+	m.NumNamedVariables = r.ReadUint16()
+	m.NumNamedArrays = r.ReadUint16()
+	m.CallType = r.ReadUint16()
+	m.ConnectionDeviceIDType = r.ReadUint16()
+	m.ConnectionCallID = r.ReadUint32()
+	m.NewConnectionDeviceIDType = r.ReadUint16()
+	m.NewConnectionCallID = r.ReadUint32()
+	m.CalledPartyDisposition = r.ReadUint16()
+	m.CampaignID = r.ReadUint32()
+	m.QueryRuleID = r.ReadUint32()
+
+	if err := r.Error(); err != nil {
+		return err
+	}
+
+	// Parse floating fields
+	if r.Remaining() > 0 {
+		ff, err := protocol.ParseFloatingFields(r.RemainingBytes())
+		if err != nil {
+			return err
+		}
+		m.ConnectionDeviceID = ff.GetString(protocol.TagConnectionDeviceID)
+		m.NewConnectionDeviceID = ff.GetString(protocol.TagNewConnectionDeviceID)
+		m.ANI = ff.GetString(protocol.TagANI)
+		m.DNIS = ff.GetString(protocol.TagDNIS)
+		m.DialedNumber = ff.GetString(protocol.TagDialedNumber)
+		m.CallerEnteredDigits = ff.GetString(protocol.TagCallerEnteredDigits)
+		m.UserToUserInfo = ff.GetString(protocol.TagUserToUserInfo)
+		m.CallWrapupData = ff.GetString(protocol.TagCallWrapupData)
+		m.CallVariable1 = ff.GetString(protocol.TagCallVariable1)
+		m.CallVariable2 = ff.GetString(protocol.TagCallVariable2)
+		m.CallVariable3 = ff.GetString(protocol.TagCallVariable3)
+		m.CallVariable4 = ff.GetString(protocol.TagCallVariable4)
+		m.CallVariable5 = ff.GetString(protocol.TagCallVariable5)
+		m.CallVariable6 = ff.GetString(protocol.TagCallVariable6)
+		m.CallVariable7 = ff.GetString(protocol.TagCallVariable7)
+		m.CallVariable8 = ff.GetString(protocol.TagCallVariable8)
+		m.CallVariable9 = ff.GetString(protocol.TagCallVariable9)
+		m.CallVariable10 = ff.GetString(protocol.TagCallVariable10)
+		m.RouterCallKeyDay = ff.GetUint32(protocol.TagRouterCallKeyDay)
+		m.RouterCallKeyCallID = ff.GetUint32(protocol.TagRouterCallKeyCallID)
+		m.RouterCallKeySeqNum = ff.GetUint32(protocol.TagRouterCallKeySeqNum)
+	}
+
+	return nil
 }

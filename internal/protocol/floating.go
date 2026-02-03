@@ -21,24 +21,25 @@ func NewFloatingFieldParser(data []byte) *FloatingFieldParser {
 
 // HasMore returns true if there are more floating fields to parse.
 func (p *FloatingFieldParser) HasMore() bool {
-	// Need at least 3 bytes for tag (2) + length (1)
-	return p.offset+3 <= len(p.data)
+	// Need at least 4 bytes for tag (2) + length (2)
+	return p.offset+4 <= len(p.data)
 }
 
 // Next reads the next floating field.
 // Returns tag, data, and any error.
+// Protocol Version 24: Tag is USHORT (2 bytes), Length is USHORT (2 bytes)
 func (p *FloatingFieldParser) Next() (uint16, []byte, error) {
 	if !p.HasMore() {
 		return 0, nil, fmt.Errorf("no more floating fields")
 	}
 
-	// Read 2-byte tag
+	// Read 2-byte tag (USHORT)
 	tag := binary.BigEndian.Uint16(p.data[p.offset : p.offset+2])
 	p.offset += 2
 
-	// Read 1-byte length
-	length := int(p.data[p.offset])
-	p.offset++
+	// Read 2-byte length (USHORT)
+	length := int(binary.BigEndian.Uint16(p.data[p.offset : p.offset+2]))
+	p.offset += 2
 
 	// Validate we have enough data
 	if p.offset+length > len(p.data) {
@@ -160,15 +161,16 @@ func (w *FloatingFieldWriter) WriteString(tag uint16, s string) {
 }
 
 // WriteBytes writes a raw bytes field.
+// Protocol Version 24: Tag is USHORT (2 bytes), Length is USHORT (2 bytes)
 func (w *FloatingFieldWriter) WriteBytes(tag uint16, data []byte) {
-	if len(data) > 255 {
-		data = data[:255] // Truncate to max length
+	if len(data) > 65535 {
+		data = data[:65535] // Truncate to max length (USHORT max)
 	}
 
-	// Write tag (2 bytes)
+	// Write tag (2 bytes USHORT)
 	w.buf.WriteUint16(tag)
-	// Write length (1 byte)
-	w.buf.WriteUint8(uint8(len(data)))
+	// Write length (2 bytes USHORT)
+	w.buf.WriteUint16(uint16(len(data)))
 	// Write data
 	w.buf.Write(data)
 }

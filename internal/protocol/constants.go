@@ -184,38 +184,73 @@ const (
 
 // Floating field tag IDs.
 const (
-	TagClientID           uint16 = 1
-	TagClientPassword     uint16 = 2
-	TagAgentExtension     uint16 = 3
-	TagAgentID            uint16 = 4
-	TagAgentInstrument    uint16 = 5
-	TagPeripheralID       uint16 = 6
-	TagServiceNumber      uint16 = 7
-	TagServiceID          uint16 = 8
-	TagSkillGroupNumber   uint16 = 9
-	TagSkillGroupID       uint16 = 10
-	TagSkillGroupPriority uint16 = 11
-	TagCallingDeviceID    uint16 = 12
-	TagCalledDeviceID     uint16 = 13
+	TagClientID             uint16 = 1
+	TagClientPassword       uint16 = 2
+	TagAgentExtension       uint16 = 3
+	TagAgentID              uint16 = 4
+	TagAgentInstrument      uint16 = 5
+	TagPeripheralID         uint16 = 6
+	TagServiceNumber        uint16 = 7
+	TagServiceID            uint16 = 8
+	TagSkillGroupNumber     uint16 = 9
+	TagSkillGroupID         uint16 = 10
+	TagSkillGroupPriority   uint16 = 11
+	TagCallingDeviceID      uint16 = 12
+	TagCalledDeviceID       uint16 = 13
 	TagLastRedirectDeviceID uint16 = 14
-	TagANI                uint16 = 15
-	TagDNIS               uint16 = 16
-	TagUserToUserInfo     uint16 = 17
-	TagCallVariable1      uint16 = 18
-	TagCallVariable2      uint16 = 19
-	TagCallVariable3      uint16 = 20
-	TagCallVariable4      uint16 = 21
-	TagCallVariable5      uint16 = 22
-	TagCallVariable6      uint16 = 23
-	TagCallVariable7      uint16 = 24
-	TagCallVariable8      uint16 = 25
-	TagCallVariable9      uint16 = 26
-	TagCallVariable10     uint16 = 27
-	TagCTIClientSignature uint16 = 28
-	TagCTIClientTimestamp uint16 = 29
-	TagCallWrapupData     uint16 = 30
-	TagNamedVariable      uint16 = 82
-	TagNamedArray         uint16 = 83
+	TagANI                  uint16 = 15
+	TagDNIS                 uint16 = 16
+	TagUserToUserInfo       uint16 = 17
+	TagCallVariable1        uint16 = 18
+	TagCallVariable2        uint16 = 19
+	TagCallVariable3        uint16 = 20
+	TagCallVariable4        uint16 = 21
+	TagCallVariable5        uint16 = 22
+	TagCallVariable6        uint16 = 23
+	TagCallVariable7        uint16 = 24
+	TagCallVariable8        uint16 = 25
+	TagCallVariable9        uint16 = 26
+	TagCallVariable10       uint16 = 27
+	TagCTIClientSignature   uint16 = 28
+	TagCTIClientTimestamp   uint16 = 29
+	TagCallWrapupData       uint16 = 30
+	TagConnectionDeviceID   uint16 = 31
+	TagAlertingDeviceID     uint16 = 32
+	TagAnsweringDeviceID    uint16 = 33
+	TagHoldingDeviceID      uint16 = 34
+	TagRetrievingDeviceID   uint16 = 35
+	TagReleasingDeviceID    uint16 = 36
+	TagFailingDeviceID      uint16 = 37
+	TagTransferringDeviceID  uint16 = 38
+	TagTransferredDeviceID   uint16 = 39
+	TagDialedNumber          uint16 = 40
+	TagCallerEnteredDigits   uint16 = 41
+	TagControllerDeviceID    uint16 = 42
+	TagAddedPartyDeviceID    uint16 = 43
+	TagConsultingDeviceID    uint16 = 44
+	TagConsultedDeviceID     uint16 = 45
+	TagPrimaryDeviceID       uint16 = 46
+	TagSecondaryDeviceID     uint16 = 47
+	TagPrimaryCallID         uint16 = 48
+	TagSecondaryCallID       uint16 = 49
+	TagRouterCallKeyDay     uint16 = 72
+	TagRouterCallKeyCallID  uint16 = 73
+	TagRouterCallKeySeqNum  uint16 = 214
+	TagNamedVariable        uint16 = 82
+	TagNamedArray           uint16 = 83
+	TagTrunkNumber          uint16 = 121
+	TagTrunkGroupNumber     uint16 = 122
+	TagNextAgentState       uint16 = 123
+	TagDuration             uint16 = 126
+	TagActiveTerminal       uint16 = 127
+	TagDirection            uint16 = 128
+	TagSecondaryConnCallID   uint16 = 171
+	TagMultilineAgentControl uint16 = 180
+	TagNewConnectionDeviceID uint16 = 186
+	TagNumPeripherals        uint16 = 232
+	TagCampaignID            uint16 = 234
+	TagQueryRuleID           uint16 = 235
+	TagCallReferenceID       uint16 = 248
 )
 
 // Header size in bytes.
@@ -285,6 +320,26 @@ func MessageTypeName(msgType uint32) string {
 		return "RTP_STARTED_EVENT"
 	case MsgTypeRTPStoppedEvent:
 		return "RTP_STOPPED_EVENT"
+	case MsgTypeConsultCallReq:
+		return "CONSULT_CALL_REQ"
+	case MsgTypeConsultCallConf:
+		return "CONSULT_CALL_CONF"
+	case MsgTypeConferenceCallReq:
+		return "CONFERENCE_CALL_REQ"
+	case MsgTypeConferenceCallConf:
+		return "CONFERENCE_CALL_CONF"
+	case MsgTypeTransferCallReq:
+		return "TRANSFER_CALL_REQ"
+	case MsgTypeTransferCallConf:
+		return "TRANSFER_CALL_CONF"
+	case MsgTypeHoldCallReq:
+		return "HOLD_CALL_REQ"
+	case MsgTypeHoldCallConf:
+		return "HOLD_CALL_CONF"
+	case MsgTypeRetrieveCallReq:
+		return "RETRIEVE_CALL_REQ"
+	case MsgTypeRetrieveCallConf:
+		return "RETRIEVE_CALL_CONF"
 	default:
 		return "UNKNOWN"
 	}

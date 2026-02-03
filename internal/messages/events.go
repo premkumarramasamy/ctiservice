@@ -5,9 +5,10 @@ import (
 )
 
 // FailureConf is sent when a request fails.
+// Protocol Version 24 - FAILURE_CONF (MessageType = 1)
 type FailureConf struct {
-	InvokeID uint32 // Matches the request's InvokeID
-	Status   uint32 // Error status code
+	InvokeID uint32 // Matches the request's InvokeID (UINT)
+	Status   uint32 // Error status code (UINT)
 }
 
 func (m *FailureConf) Type() uint32 {
@@ -29,8 +30,9 @@ func (m *FailureConf) Decode(data []byte) error {
 }
 
 // FailureEvent is an unsolicited error notification.
+// Protocol Version 24 - FAILURE_EVENT (MessageType = 2)
 type FailureEvent struct {
-	Status uint32 // Error status code
+	Status uint32 // Error status code (UINT)
 }
 
 func (m *FailureEvent) Type() uint32 {
@@ -50,17 +52,20 @@ func (m *FailureEvent) Decode(data []byte) error {
 }
 
 // SystemEvent reports system status changes.
+// Protocol Version 24 - SYSTEM_EVENT (MessageType = 31)
 type SystemEvent struct {
-	PGStatus              uint32 // Peripheral gateway status
-	ICMCentralControllerTime uint32 // ICM controller timestamp
-	SystemEventID         uint32 // Type of system event
-	SystemEventArg1       uint32 // Event-specific argument 1
-	SystemEventArg2       uint32 // Event-specific argument 2
-	SystemEventArg3       uint32 // Event-specific argument 3
-	EventDeviceType       uint16 // Device type involved
-	Reserved              uint16 // Reserved
-	ICMCentralController  uint32 // ICM central controller status
-	Text                  string // Event description (floating)
+	// Fixed Part
+	PGStatus                 uint32 // Peripheral gateway status (UINT)
+	ICMCentralControllerTime uint32 // ICM controller timestamp (TIME)
+	SystemEventID            uint32 // Type of system event (UINT)
+	SystemEventArg1          uint32 // Event-specific argument 1 (UINT)
+	SystemEventArg2          uint32 // Event-specific argument 2 (UINT)
+	SystemEventArg3          uint32 // Event-specific argument 3 (UINT)
+	EventDeviceType          uint16 // Device type involved (USHORT)
+	Reserved                 uint16 // Reserved (USHORT)
+	ICMCentralController     uint32 // ICM central controller status (UINT)
+
+	// Floating fields - none defined for this message
 }
 
 func (m *SystemEvent) Type() uint32 {
@@ -92,13 +97,7 @@ func (m *SystemEvent) Decode(data []byte) error {
 	m.EventDeviceType = r.ReadUint16()
 	m.Reserved = r.ReadUint16()
 	m.ICMCentralController = r.ReadUint32()
-
-	if err := r.Error(); err != nil {
-		return err
-	}
-
-	// No standard floating fields defined for SystemEvent, but parse any that exist
-	return nil
+	return r.Error()
 }
 
 // EventName returns the human-readable name for this system event.
