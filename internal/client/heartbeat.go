@@ -4,26 +4,24 @@ import (
 	"context"
 	"log/slog"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
 // Heartbeat manages the heartbeat mechanism for keeping the session alive.
 type Heartbeat struct {
-	interval    time.Duration
-	sendFunc    func(invokeID uint32) error
-	onFailure   func()
-	logger      *slog.Logger
+	interval  time.Duration
+	sendFunc  func() (uint32, error) // sends HEARTBEAT_REQ, returns the invokeID used
+	onFailure func()
+	logger    *slog.Logger
 
-	mu           sync.Mutex
-	unconfirmed  int
-	lastInvokeID atomic.Uint32
-	confirmed    chan uint32
-	running      bool
+	mu          sync.Mutex
+	unconfirmed int
+	confirmed   chan uint32
+	running     bool
 }
 
 // NewHeartbeat creates a new heartbeat manager.
-func NewHeartbeat(interval time.Duration, sendFunc func(invokeID uint32) error, onFailure func(), logger *slog.Logger) *Heartbeat {
+func NewHeartbeat(interval time.Duration, sendFunc func() (uint32, error), onFailure func(), logger *slog.Logger) *Heartbeat {
 	return &Heartbeat{
 		interval:  interval,
 		sendFunc:  sendFunc,
@@ -38,13 +36,26 @@ func NewHeartbeat(interval time.Duration, sendFunc func(invokeID uint32) error, 
 // If 3 heartbeats go unconfirmed, it calls the onFailure callback.
 func (h *Heartbeat) Run(ctx context.Context) {
 	h.mu.Lock()
-	if h.running {
-		h.mu.Unlock()
-		return
-	}
 	h.running = true
 	h.unconfirmed = 0
 	h.mu.Unlock()
+
+	// Drain any stale confirmations left over from a previous session.
+drain:
+	for {
+		select {
+		case <-h.confirmed:
+			continue
+		default:
+			break drain
+		}
+	}
+
+	defer func() {
+		h.mu.Lock()
+		h.running = false
+		h.mu.Unlock()
+	}()
 
 	ticker := time.NewTicker(h.interval)
 	defer ticker.Stop()
@@ -55,9 +66,6 @@ func (h *Heartbeat) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			h.logger.Info("heartbeat stopped")
-			h.mu.Lock()
-			h.running = false
-			h.mu.Unlock()
 			return
 
 		case <-ticker.C:
@@ -67,19 +75,15 @@ func (h *Heartbeat) Run(ctx context.Context) {
 
 			if unconfirmed >= 3 {
 				h.logger.Error("heartbeat failure: 3 heartbeats unconfirmed")
-				h.mu.Lock()
-				h.running = false
-				h.mu.Unlock()
 				h.onFailure()
 				return
 			}
 
-			invokeID := h.lastInvokeID.Add(1)
-			if err := h.sendFunc(invokeID); err != nil {
+			invokeID, err := h.sendFunc()
+			if err != nil {
 				h.logger.Error("failed to send heartbeat", "error", err)
-				h.mu.Lock()
-				h.unconfirmed++
-				h.mu.Unlock()
+				// Do NOT increment unconfirmed: the request never reached
+				// the server, so no HEARTBEAT_CONF will arrive for it.
 			} else {
 				h.logger.Debug("heartbeat sent", "invokeID", invokeID)
 				h.mu.Lock()

@@ -76,11 +76,16 @@ func (c *Client) Run(ctx context.Context) error {
 
 		// Start heartbeat
 		heartbeatCtx, cancelHeartbeat := context.WithCancel(ctx)
-		go c.heartbeat.Run(heartbeatCtx)
+		heartbeatDone := make(chan struct{})
+		go func() {
+			defer close(heartbeatDone)
+			c.heartbeat.Run(heartbeatCtx)
+		}()
 
 		// Process messages until error or context canceled
 		err := c.processMessages(ctx)
 		cancelHeartbeat()
+		<-heartbeatDone // wait for the goroutine to finish before reconnecting
 
 		if err != nil {
 			c.logger.Error("message processing error", "error", err)
@@ -269,9 +274,10 @@ func (c *Client) sendMessage(msg protocol.Message) error {
 	return err
 }
 
-// sendHeartbeat sends a heartbeat request.
-func (c *Client) sendHeartbeat(invokeID uint32) error {
-	return c.sendMessage(&messages.HeartbeatReq{InvokeID: invokeID})
+// sendHeartbeat sends a heartbeat request using the shared session invokeID.
+func (c *Client) sendHeartbeat() (uint32, error) {
+	invokeID := c.session.NextInvokeID()
+	return invokeID, c.sendMessage(&messages.HeartbeatReq{InvokeID: invokeID})
 }
 
 // onHeartbeatFailure is called when heartbeat fails.
