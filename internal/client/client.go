@@ -142,9 +142,9 @@ func (c *Client) open(ctx context.Context) error {
 		IdleTimeout:       uint32(c.cfg.IdleTimeout.Seconds()),
 		PeripheralID:      c.cfg.PeripheralID,
 		ServicesRequested: c.cfg.ServicesRequested,
-		CallMsgMask:       0xFFFFFFFF, // All call events
-		AgentStateMask:    0xFFFFFFFF, // All agent state events
-		ConfigMsgMask:     0xFFFFFFFF, // All config events
+		CallMsgMask:       c.cfg.CallMsgMask,       // Call events from config
+		AgentStateMask:    c.cfg.AgentStateMask,    // Agent state events from config
+		ConfigMsgMask:     c.cfg.ConfigMsgMask,     // Config events from config
 		ClientID:          c.cfg.ClientID,
 	}
 

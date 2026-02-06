@@ -21,6 +21,11 @@ type Config struct {
 	ServicesRequested uint32
 	IdleTimeout       time.Duration
 
+	// Event subscription masks for OPEN_REQ
+	CallMsgMask       uint32 // Bitmask for call events to receive
+	AgentStateMask    uint32 // Bitmask for agent state events to receive
+	ConfigMsgMask     uint32 // Bitmask for config events to receive
+
 	// Heartbeat settings
 	HeartbeatInterval time.Duration
 
@@ -41,6 +46,9 @@ func DefaultConfig() *Config {
 		PeripheralID:         0,
 		ServicesRequested:    protocol.ServiceAllEvents | protocol.ServiceClientEvents,
 		IdleTimeout:          120 * time.Second,
+		CallMsgMask:          protocol.CallMaskAll,       // Subscribe to all call events
+		AgentStateMask:       protocol.AgentMaskAll,      // Subscribe to all agent events
+		ConfigMsgMask:        protocol.ConfigMaskAll,     // Subscribe to all config events
 		HeartbeatInterval:    30 * time.Second,
 		ReconnectDelay:       10 * time.Second,
 		ReconnectMaxAttempts: 0,
@@ -82,6 +90,30 @@ func LoadFromEnv() (*Config, error) {
 			return nil, fmt.Errorf("invalid CTI_SERVICES_REQUESTED: %w", err)
 		}
 		cfg.ServicesRequested = uint32(services)
+	}
+
+	if v := os.Getenv("CTI_CALL_MSG_MASK"); v != "" {
+		mask, err := strconv.ParseUint(v, 0, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid CTI_CALL_MSG_MASK: %w", err)
+		}
+		cfg.CallMsgMask = uint32(mask)
+	}
+
+	if v := os.Getenv("CTI_AGENT_STATE_MASK"); v != "" {
+		mask, err := strconv.ParseUint(v, 0, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid CTI_AGENT_STATE_MASK: %w", err)
+		}
+		cfg.AgentStateMask = uint32(mask)
+	}
+
+	if v := os.Getenv("CTI_CONFIG_MSG_MASK"); v != "" {
+		mask, err := strconv.ParseUint(v, 0, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid CTI_CONFIG_MSG_MASK: %w", err)
+		}
+		cfg.ConfigMsgMask = uint32(mask)
 	}
 
 	if v := os.Getenv("CTI_IDLE_TIMEOUT"); v != "" {

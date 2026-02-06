@@ -129,6 +129,46 @@ const (
 	ServiceSupervisor   uint32 = 0x00000020 // Supervisor capabilities
 )
 
+// CallMsgMask bits for subscribing to call events in OPEN_REQ.
+const (
+	CallMaskDelivered             uint32 = 0x00000001 // CALL_DELIVERED_EVENT
+	CallMaskEstablished           uint32 = 0x00000002 // CALL_ESTABLISHED_EVENT
+	CallMaskHeld                  uint32 = 0x00000004 // CALL_HELD_EVENT
+	CallMaskRetrieved             uint32 = 0x00000008 // CALL_RETRIEVED_EVENT
+	CallMaskCleared               uint32 = 0x00000010 // CALL_CLEARED_EVENT
+	CallMaskConnectionCleared     uint32 = 0x00000020 // CALL_CONNECTION_CLEARED_EVENT
+	CallMaskOriginated            uint32 = 0x00000040 // CALL_ORIGINATED_EVENT
+	CallMaskFailed                uint32 = 0x00000080 // CALL_FAILED_EVENT
+	CallMaskConferenced           uint32 = 0x00000100 // CALL_CONFERENCED_EVENT
+	CallMaskTransferred           uint32 = 0x00000200 // CALL_TRANSFERRED_EVENT
+	CallMaskDiverted              uint32 = 0x00000400 // CALL_DIVERTED_EVENT
+	CallMaskServiceInitiated      uint32 = 0x00000800 // CALL_SERVICE_INITIATED_EVENT
+	CallMaskQueued                uint32 = 0x00001000 // CALL_QUEUED_EVENT
+	CallMaskDequeued              uint32 = 0x00002000 // CALL_DEQUEUED_EVENT
+	CallMaskBeginCall             uint32 = 0x00004000 // BEGIN_CALL_EVENT
+	CallMaskEndCall               uint32 = 0x00008000 // END_CALL_EVENT
+	CallMaskDataUpdate            uint32 = 0x00010000 // CALL_DATA_UPDATE_EVENT
+	CallMaskAgentPreCall          uint32 = 0x00020000 // AGENT_PRE_CALL_EVENT
+	CallMaskAgentPreCallAbort     uint32 = 0x00040000 // AGENT_PRE_CALL_ABORT_EVENT
+	CallMaskAll                   uint32 = 0xFFFFFFFF // All call events
+)
+
+// AgentStateMask bits for subscribing to agent state events in OPEN_REQ.
+const (
+	AgentMaskStateChange          uint32 = 0x00000001 // AGENT_STATE_EVENT
+	AgentMaskAll                  uint32 = 0xFFFFFFFF // All agent events
+)
+
+// ConfigMsgMask bits for subscribing to configuration events in OPEN_REQ.
+const (
+	ConfigMaskAgent               uint32 = 0x00000001 // CONFIG_AGENT_EVENT
+	ConfigMaskDevice              uint32 = 0x00000002 // CONFIG_DEVICE_EVENT
+	ConfigMaskCSQ                 uint32 = 0x00000004 // CONFIG_CSQ_EVENT (skill group/queue)
+	ConfigMaskService             uint32 = 0x00000008 // CONFIG service events
+	ConfigMaskBeginEnd            uint32 = 0x00000010 // CONFIG_BEGIN/END_EVENT
+	ConfigMaskAll                 uint32 = 0xFFFFFFFF // All config events
+)
+
 // Agent state values.
 const (
 	AgentStateLoggedOut   uint16 = 0
