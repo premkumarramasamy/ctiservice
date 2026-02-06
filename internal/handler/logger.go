@@ -75,8 +75,6 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"answeringDeviceID", m.AnsweringDeviceID,
 				"callingDeviceID", m.CallingDeviceID,
 				"calledDeviceID", m.CalledDeviceID,
-				"ANI", m.ANI,
-				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallHeldEvent:
@@ -89,8 +87,6 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"localConnectionState", m.LocalConnectionState,
 				"connectionDeviceID", m.ConnectionDeviceID,
 				"holdingDeviceID", m.HoldingDeviceID,
-				"ANI", m.ANI,
-				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallRetrievedEvent:
@@ -103,8 +99,6 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"localConnectionState", m.LocalConnectionState,
 				"connectionDeviceID", m.ConnectionDeviceID,
 				"retrievingDeviceID", m.RetrievingDeviceID,
-				"ANI", m.ANI,
-				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallClearedEvent:
@@ -158,8 +152,6 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"secondaryDeviceID", m.SecondaryDeviceID,
 				"controllerDeviceID", m.ControllerDeviceID,
 				"addedPartyDeviceID", m.AddedPartyDeviceID,
-				"ANI", m.ANI,
-				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallTransferredEvent:
@@ -176,8 +168,6 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 				"secondaryDeviceID", m.SecondaryDeviceID,
 				"transferringDeviceID", m.TransferringDeviceID,
 				"transferredDeviceID", m.TransferredDeviceID,
-				"ANI", m.ANI,
-				"DNIS", m.DNIS,
 			)...)
 
 	case *messages.CallQueuedEvent:
@@ -253,6 +243,109 @@ func (h *LogHandler) Handle(msg protocol.Message) {
 		h.logger.Error("failure event",
 			append(attrs,
 				"status", m.Status,
+			)...)
+
+	case *messages.CallServiceInitiatedEvent:
+		h.logger.Info("call service initiated",
+			append(attrs,
+				"callID", m.ConnectionCallID,
+				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"serviceNumber", m.ServiceNumber,
+				"serviceID", m.ServiceID,
+				"skillGroupNumber", m.SkillGroupNumber,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"callingDeviceID", m.CallingDeviceID,
+			)...)
+
+	case *messages.AgentPreCallEvent:
+		h.logger.Info("agent pre-call notification",
+			append(attrs,
+				"callID", m.ConnectionCallID,
+				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"serviceNumber", m.ServiceNumber,
+				"skillGroupNumber", m.SkillGroupNumber,
+				"callType", m.CallType,
+				"ANI", m.ANI,
+				"DNIS", m.DNIS,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"preCallInvokeID", m.PreCallInvokeID,
+			)...)
+
+	case *messages.AgentPreCallAbortEvent:
+		h.logger.Warn("agent pre-call aborted",
+			append(attrs,
+				"callID", m.ConnectionCallID,
+				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"eventCause", m.EventCause,
+				"connectionDeviceID", m.ConnectionDeviceID,
+				"preCallInvokeID", m.PreCallInvokeID,
+			)...)
+
+	case *messages.SupervisorAssistEvent:
+		h.logger.Info("supervisor assist event",
+			append(attrs,
+				"callID", m.ConnectionCallID,
+				"monitorID", m.MonitorID,
+				"peripheralID", m.PeripheralID,
+				"action", m.ActionName(),
+				"actionCode", m.SupervisorAction,
+				"eventCause", m.EventCause,
+				"agentID", m.AgentID,
+				"agentExtension", m.AgentExtension,
+				"connectionDeviceID", m.ConnectionDeviceID,
+			)...)
+
+	case *messages.ConfigAgentEvent:
+		h.logger.Info("config agent event",
+			append(attrs,
+				"peripheralID", m.PeripheralID,
+				"operation", m.OperationName(),
+				"numRecords", m.NumRecords,
+				"agentID", m.AgentID,
+				"agentExtension", m.AgentExtension,
+				"loginID", m.LoginID,
+				"firstName", m.FirstName,
+				"lastName", m.LastName,
+			)...)
+
+	case *messages.ConfigDeviceEvent:
+		h.logger.Info("config device event",
+			append(attrs,
+				"peripheralID", m.PeripheralID,
+				"operation", m.OperationName(),
+				"numRecords", m.NumRecords,
+				"extension", m.Extension,
+				"skillGroupID", m.SkillGroupID,
+				"serviceID", m.ServiceID,
+			)...)
+
+	case *messages.ConfigCSQEvent:
+		h.logger.Info("config CSQ event",
+			append(attrs,
+				"peripheralID", m.PeripheralID,
+				"operation", m.OperationName(),
+				"numRecords", m.NumRecords,
+				"csqID", m.CSQID,
+				"skillGroupID", m.SkillGroupID,
+				"serviceID", m.ServiceID,
+			)...)
+
+	case *messages.ConfigBeginEvent:
+		h.logger.Info("config begin",
+			append(attrs,
+				"peripheralID", m.PeripheralID,
+				"configType", m.ConfigType,
+			)...)
+
+	case *messages.ConfigEndEvent:
+		h.logger.Info("config end",
+			append(attrs,
+				"peripheralID", m.PeripheralID,
+				"configType", m.ConfigType,
+				"numRecords", m.NumRecords,
 			)...)
 
 	case *messages.GenericMessage:

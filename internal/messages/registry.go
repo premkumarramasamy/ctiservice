@@ -88,10 +88,16 @@ func (r *Registry) Create(msgType uint32) protocol.Message {
 		return &CallQueuedEvent{}
 	case protocol.MsgTypeCallDequeuedEvent:
 		return &CallDequeuedEvent{}
+	case protocol.MsgTypeCallServiceInitiatedEvent:
+		return &CallServiceInitiatedEvent{}
 
 	// Agent events
 	case protocol.MsgTypeAgentStateEvent:
 		return &AgentStateEvent{}
+	case protocol.MsgTypeAgentPreCallEvent:
+		return &AgentPreCallEvent{}
+	case protocol.MsgTypeAgentPreCallAbortEvent:
+		return &AgentPreCallAbortEvent{}
 
 	// Call control messages
 	case protocol.MsgTypeConsultCallReq:
@@ -114,6 +120,24 @@ func (r *Registry) Create(msgType uint32) protocol.Message {
 		return &RetrieveCallReq{}
 	case protocol.MsgTypeRetrieveCallConf:
 		return &RetrieveCallConf{}
+
+	// Supervisor events
+	case protocol.MsgTypeSupervisorAssistEvent:
+		return &SupervisorAssistEvent{}
+
+	// Config events
+	case protocol.MsgTypeConfigAgentEvent:
+		return &ConfigAgentEvent{}
+	case protocol.MsgTypeConfigDeviceEvent:
+		return &ConfigDeviceEvent{}
+	case protocol.MsgTypeConfigCSQEvent:
+		return &ConfigCSQEvent{}
+	case protocol.MsgTypeConfigBeginEvent:
+		return &ConfigBeginEvent{}
+	case protocol.MsgTypeConfigEndEvent:
+		return &ConfigEndEvent{}
+	case protocol.MsgTypeConfigRequestEvent:
+		return &ConfigRequestEvent{}
 
 	default:
 		// Return a generic message for unknown types

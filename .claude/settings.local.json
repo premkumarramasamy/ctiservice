@@ -5,7 +5,8 @@
       "WebSearch",
       "WebFetch(domain:developer.cisco.com)",
       "Bash(go build:*)",
-      "Bash(go vet:*)"
+      "Bash(go vet:*)",
+      "Bash(go test:*)"
     ]
   }
 }

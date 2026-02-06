@@ -5,6 +5,7 @@ import (
 	"ctiservice/internal/config"
 	"ctiservice/internal/messages"
 	"ctiservice/internal/protocol"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -211,7 +212,8 @@ func (c *Client) processMessages(ctx context.Context) error {
 
 		msg, err := c.reader.ReadMessage()
 		if err != nil {
-			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+			var netErr net.Error
+			if errors.As(err, &netErr) && netErr.Timeout() {
 				continue // Timeout is expected, check context and continue
 			}
 			return err

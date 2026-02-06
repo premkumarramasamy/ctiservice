@@ -75,7 +75,9 @@ const (
 	MsgTypeSnapshotCallConf    uint32 = 83
 	MsgTypeSnapshotDeviceReq   uint32 = 84
 	MsgTypeSnapshotDeviceConf  uint32 = 85
-	MsgTypeCallDequeuedEvent   uint32 = 86
+	MsgTypeCallDequeuedEvent       uint32 = 86
+	MsgTypeAgentPreCallEvent       uint32 = 87
+	MsgTypeAgentPreCallAbortEvent  uint32 = 88
 
 	// DTMF
 	MsgTypeSendDTMFSignalReq  uint32 = 91
@@ -251,6 +253,20 @@ const (
 	TagCampaignID            uint16 = 234
 	TagQueryRuleID           uint16 = 235
 	TagCallReferenceID       uint16 = 248
+	TagPreCallInvokeID       uint16 = 249
+	TagCallTypeID            uint16 = 250
+	TagRecordType            uint16 = 183
+	TagAgentType             uint16 = 189
+	TagLoginID               uint16 = 190
+	TagLastName              uint16 = 138
+	TagFirstName             uint16 = 137
+	TagNumCSQ                uint16 = 191
+	TagCSQID                 uint16 = 62
+	TagSupervisorAction      uint16 = 192
+	TagAgentConnectionCallID uint16 = 193
+	TagAgentPeripheralID     uint16 = 194
+	TagAgentPeripheralNumber uint16 = 195
+	TagConfigOperation       uint16 = 196
 )
 
 // Header size in bytes.
@@ -316,6 +332,10 @@ func MessageTypeName(msgType uint32) string {
 		return "SYSTEM_EVENT"
 	case MsgTypeCallDequeuedEvent:
 		return "CALL_DEQUEUED_EVENT"
+	case MsgTypeAgentPreCallEvent:
+		return "AGENT_PRE_CALL_EVENT"
+	case MsgTypeAgentPreCallAbortEvent:
+		return "AGENT_PRE_CALL_ABORT_EVENT"
 	case MsgTypeRTPStartedEvent:
 		return "RTP_STARTED_EVENT"
 	case MsgTypeRTPStoppedEvent:
@@ -340,6 +360,20 @@ func MessageTypeName(msgType uint32) string {
 		return "RETRIEVE_CALL_REQ"
 	case MsgTypeRetrieveCallConf:
 		return "RETRIEVE_CALL_CONF"
+	case MsgTypeSupervisorAssistEvent:
+		return "SUPERVISOR_ASSIST_EVENT"
+	case MsgTypeConfigAgentEvent:
+		return "CONFIG_AGENT_EVENT"
+	case MsgTypeConfigDeviceEvent:
+		return "CONFIG_DEVICE_EVENT"
+	case MsgTypeConfigCSQEvent:
+		return "CONFIG_CSQ_EVENT"
+	case MsgTypeConfigBeginEvent:
+		return "CONFIG_BEGIN_EVENT"
+	case MsgTypeConfigEndEvent:
+		return "CONFIG_END_EVENT"
+	case MsgTypeConfigRequestEvent:
+		return "CONFIG_REQUEST_EVENT"
 	default:
 		return "UNKNOWN"
 	}
