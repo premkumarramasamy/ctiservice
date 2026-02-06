@@ -69,19 +69,44 @@ func (p *FloatingFieldParser) ParseAll() (map[uint16][]byte, error) {
 	return fields, nil
 }
 
+// floatingFieldEntry stores a tag and its data for internal use.
+type floatingFieldEntry struct {
+	tag  uint16
+	data []byte
+}
+
 // FloatingFields holds parsed floating fields from a message.
+// Supports repeated fields with the same tag.
 type FloatingFields struct {
-	fields map[uint16][]byte
+	fields    map[uint16][]byte      // First occurrence of each tag
+	allFields []floatingFieldEntry   // All fields in order (for repeated tags)
 }
 
 // ParseFloatingFields parses the floating part of a message.
 func ParseFloatingFields(data []byte) (*FloatingFields, error) {
 	parser := NewFloatingFieldParser(data)
-	fields, err := parser.ParseAll()
-	if err != nil {
-		return nil, err
+
+	ff := &FloatingFields{
+		fields:    make(map[uint16][]byte),
+		allFields: make([]floatingFieldEntry, 0),
 	}
-	return &FloatingFields{fields: fields}, nil
+
+	for parser.HasMore() {
+		tag, fieldData, err := parser.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		// Store in allFields for repeated tag support
+		ff.allFields = append(ff.allFields, floatingFieldEntry{tag: tag, data: fieldData})
+
+		// Store first occurrence in map for quick lookup
+		if _, exists := ff.fields[tag]; !exists {
+			ff.fields[tag] = fieldData
+		}
+	}
+
+	return ff, nil
 }
 
 // Has returns true if the field with the given tag exists.
@@ -140,6 +165,73 @@ func (f *FloatingFields) Tags() []uint16 {
 		tags = append(tags, tag)
 	}
 	return tags
+}
+
+// GetAllBytes returns all occurrences of a repeated field.
+func (f *FloatingFields) GetAllBytes(tag uint16) [][]byte {
+	var result [][]byte
+	for _, field := range f.allFields {
+		if field.tag == tag {
+			result = append(result, field.data)
+		}
+	}
+	return result
+}
+
+// GetAllStrings returns all string values for a repeated field.
+func (f *FloatingFields) GetAllStrings(tag uint16) []string {
+	allBytes := f.GetAllBytes(tag)
+	result := make([]string, 0, len(allBytes))
+	for _, data := range allBytes {
+		// Find null terminator
+		s := ""
+		for i, b := range data {
+			if b == 0 {
+				s = string(data[:i])
+				break
+			}
+		}
+		if s == "" && len(data) > 0 {
+			s = string(data)
+		}
+		result = append(result, s)
+	}
+	return result
+}
+
+// GetAllUint32 returns all uint32 values for a repeated field.
+func (f *FloatingFields) GetAllUint32(tag uint16) []uint32 {
+	allBytes := f.GetAllBytes(tag)
+	result := make([]uint32, 0, len(allBytes))
+	for _, data := range allBytes {
+		if len(data) >= 4 {
+			result = append(result, binary.BigEndian.Uint32(data))
+		}
+	}
+	return result
+}
+
+// GetAllUint16 returns all uint16 values for a repeated field.
+func (f *FloatingFields) GetAllUint16(tag uint16) []uint16 {
+	allBytes := f.GetAllBytes(tag)
+	result := make([]uint16, 0, len(allBytes))
+	for _, data := range allBytes {
+		if len(data) >= 2 {
+			result = append(result, binary.BigEndian.Uint16(data))
+		}
+	}
+	return result
+}
+
+// Count returns the number of occurrences of a tag.
+func (f *FloatingFields) Count(tag uint16) int {
+	count := 0
+	for _, field := range f.allFields {
+		if field.tag == tag {
+			count++
+		}
+	}
+	return count
 }
 
 // FloatingFieldWriter builds the floating part of a message.

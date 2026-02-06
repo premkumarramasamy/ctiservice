@@ -1013,7 +1013,12 @@ func (m *CallConferencedEvent) Encode() ([]byte, error) {
 	if m.AddedPartyDeviceID != "" {
 		fw.WriteString(protocol.TagAddedPartyDeviceID, m.AddedPartyDeviceID)
 	}
-	// Note: ConnectedParty fields (repeating) encoding not implemented
+	// Write ConnectedParty repeated fields
+	for _, party := range m.ConnectedParties {
+		fw.WriteUint32(protocol.TagConnectedPartyCallID, party.CallID)
+		fw.WriteUint16(protocol.TagConnectedPartyDeviceIDType, party.DeviceIDType)
+		fw.WriteString(protocol.TagConnectedPartyDeviceID, party.DeviceID)
+	}
 
 	fixed := w.Bytes()
 	floating := fw.Bytes()
@@ -1058,7 +1063,25 @@ func (m *CallConferencedEvent) Decode(data []byte) error {
 		m.SecondaryDeviceID = ff.GetString(protocol.TagSecondaryDeviceID)
 		m.ControllerDeviceID = ff.GetString(protocol.TagControllerDeviceID)
 		m.AddedPartyDeviceID = ff.GetString(protocol.TagAddedPartyDeviceID)
-		// Note: ConnectedParty fields (repeating) parsing not implemented
+
+		// Parse ConnectedParty repeated fields
+		callIDs := ff.GetAllUint32(protocol.TagConnectedPartyCallID)
+		deviceTypes := ff.GetAllUint16(protocol.TagConnectedPartyDeviceIDType)
+		deviceIDs := ff.GetAllStrings(protocol.TagConnectedPartyDeviceID)
+
+		// Build ConnectedParties list from parallel arrays
+		numParties := len(callIDs)
+		if len(deviceIDs) < numParties {
+			numParties = len(deviceIDs)
+		}
+		m.ConnectedParties = make([]ConnectedParty, numParties)
+		for i := 0; i < numParties; i++ {
+			m.ConnectedParties[i].CallID = callIDs[i]
+			if i < len(deviceTypes) {
+				m.ConnectedParties[i].DeviceIDType = deviceTypes[i]
+			}
+			m.ConnectedParties[i].DeviceID = deviceIDs[i]
+		}
 	}
 
 	return nil
@@ -1137,7 +1160,12 @@ func (m *CallTransferredEvent) Encode() ([]byte, error) {
 	if m.TransferredDeviceID != "" {
 		fw.WriteString(protocol.TagTransferredDeviceID, m.TransferredDeviceID)
 	}
-	// Note: ConnectedParty fields (repeating) encoding not implemented
+	// Write ConnectedParty repeated fields
+	for _, party := range m.ConnectedParties {
+		fw.WriteUint32(protocol.TagConnectedPartyCallID, party.CallID)
+		fw.WriteUint16(protocol.TagConnectedPartyDeviceIDType, party.DeviceIDType)
+		fw.WriteString(protocol.TagConnectedPartyDeviceID, party.DeviceID)
+	}
 
 	fixed := w.Bytes()
 	floating := fw.Bytes()
@@ -1182,7 +1210,25 @@ func (m *CallTransferredEvent) Decode(data []byte) error {
 		m.SecondaryDeviceID = ff.GetString(protocol.TagSecondaryDeviceID)
 		m.TransferringDeviceID = ff.GetString(protocol.TagTransferringDeviceID)
 		m.TransferredDeviceID = ff.GetString(protocol.TagTransferredDeviceID)
-		// Note: ConnectedParty fields (repeating) parsing not implemented
+
+		// Parse ConnectedParty repeated fields
+		callIDs := ff.GetAllUint32(protocol.TagConnectedPartyCallID)
+		deviceTypes := ff.GetAllUint16(protocol.TagConnectedPartyDeviceIDType)
+		deviceIDs := ff.GetAllStrings(protocol.TagConnectedPartyDeviceID)
+
+		// Build ConnectedParties list from parallel arrays
+		numParties := len(callIDs)
+		if len(deviceIDs) < numParties {
+			numParties = len(deviceIDs)
+		}
+		m.ConnectedParties = make([]ConnectedParty, numParties)
+		for i := 0; i < numParties; i++ {
+			m.ConnectedParties[i].CallID = callIDs[i]
+			if i < len(deviceTypes) {
+				m.ConnectedParties[i].DeviceIDType = deviceTypes[i]
+			}
+			m.ConnectedParties[i].DeviceID = deviceIDs[i]
+		}
 	}
 
 	return nil

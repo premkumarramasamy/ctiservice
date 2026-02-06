@@ -286,7 +286,10 @@ const (
 	TagDuration             uint16 = 126
 	TagActiveTerminal       uint16 = 127
 	TagDirection            uint16 = 128
-	TagSecondaryConnCallID   uint16 = 171
+	TagSecondaryConnCallID       uint16 = 171
+	TagConnectedPartyCallID      uint16 = 172
+	TagConnectedPartyDeviceIDType uint16 = 173
+	TagConnectedPartyDeviceID    uint16 = 174
 	TagMultilineAgentControl uint16 = 180
 	TagNewConnectionDeviceID uint16 = 186
 	TagNumPeripherals        uint16 = 232
